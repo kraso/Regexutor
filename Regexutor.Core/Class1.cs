@@ -62,7 +62,36 @@ public sealed class GrepRegexRunner : IRegexRunner
     }
 
     public static string? TryLocateGrepOnPath()
+        => TryLocateGrep(baseDirectory: null, searchPath: true);
+
+    /// <summary>
+    /// Locate grep.exe for portable/distributed usage.
+    /// Search order:
+    /// 1) REGEXUTOR_GREP env var (explicit path to grep.exe)
+    /// 2) baseDirectory\grep.exe
+    /// 3) baseDirectory\tools\grep\grep.exe
+    /// 4) PATH (optional)
+    /// </summary>
+    public static string? TryLocateGrep(string? baseDirectory, bool searchPath = true)
     {
+        var explicitPath = Environment.GetEnvironmentVariable("REGEXUTOR_GREP");
+        if (!string.IsNullOrWhiteSpace(explicitPath) && File.Exists(explicitPath))
+            return explicitPath;
+
+        if (!string.IsNullOrWhiteSpace(baseDirectory))
+        {
+            var direct = Path.Combine(baseDirectory, "grep.exe");
+            if (File.Exists(direct))
+                return direct;
+
+            var tools = Path.Combine(baseDirectory, "tools", "grep", "grep.exe");
+            if (File.Exists(tools))
+                return tools;
+        }
+
+        if (!searchPath)
+            return null;
+
         var path = Environment.GetEnvironmentVariable("PATH");
         if (string.IsNullOrWhiteSpace(path))
             return null;

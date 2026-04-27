@@ -15,3 +15,6 @@ Thumbs.db
 Desktop.ini
 *.log
 
+# Optional portable dependency (ship in releases, not in source repo by default)
+Regexutor.App/tools/grep/grep.exe
+

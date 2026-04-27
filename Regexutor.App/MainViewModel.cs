@@ -221,7 +221,7 @@ public sealed class MainViewModel : BindableBase
 
     public MainViewModel()
     {
-        _grepPath = GrepRegexRunner.TryLocateGrepOnPath();
+        _grepPath = GrepRegexRunner.TryLocateGrep(AppContext.BaseDirectory, searchPath: true);
         if (_grepPath is not null)
         {
             _runner = new GrepRegexRunner(_grepPath, perTestTimeout: TimeSpan.FromMilliseconds(250));
@@ -231,7 +231,7 @@ public sealed class MainViewModel : BindableBase
         else
         {
             _runner = null;
-            EngineStatus = "Motor: POSIX (grep) NO encontrado. Instala Git for Windows o añade grep.exe al PATH.";
+            EngineStatus = "Motor POSIX NO disponible (grep.exe no encontrado).";
             EngineStatusBrush = Brushes.DarkRed;
         }
 
