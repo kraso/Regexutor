@@ -6,6 +6,8 @@ namespace Regexutor.App;
 
 public partial class MainWindow : Window
 {
+    private AdditionalInfoWindow? _additionalInfoWindow;
+
     public MainWindow()
     {
         InitializeComponent();
@@ -20,6 +22,25 @@ public partial class MainWindow : Window
         });
 
         DataContext = new MainViewModel();
+    }
+
+    private void AdditionalInfo_Click(object sender, RoutedEventArgs e)
+    {
+        if (_additionalInfoWindow is null)
+        {
+            _additionalInfoWindow = new AdditionalInfoWindow
+            {
+                Owner = this,
+                DataContext = DataContext,
+            };
+            _additionalInfoWindow.Closed += (_, _) => _additionalInfoWindow = null;
+            _additionalInfoWindow.Show();
+            return;
+        }
+
+        if (_additionalInfoWindow.WindowState == WindowState.Minimized)
+            _additionalInfoWindow.WindowState = WindowState.Normal;
+        _additionalInfoWindow.Activate();
     }
 
     private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)

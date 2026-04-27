@@ -15,9 +15,8 @@ public sealed class MainViewModel : BindableBase
 {
     private const int TabPractice = 0;
     private const int TabTheory = 1;
-    private const int TabCheatSheet = 2;
-    private const int TabExams = 3;
-    private const int TabAbout = 4;
+    private const int TabExams = 2;
+    private const int TabAbout = 3;
 
     private readonly IRegexRunner? _runner;
     private readonly string? _grepPath;
@@ -134,7 +133,6 @@ public sealed class MainViewModel : BindableBase
     {
         [TabPractice] = string.Empty,   // Práctica
         [TabTheory] = string.Empty,      // Teoría
-        [TabCheatSheet] = string.Empty,  // Esquema
         [TabExams] = string.Empty,       // Exámenes
         [TabAbout] = string.Empty,       // Acerca de
     };

@@ -118,6 +118,17 @@
                             Orientation="Horizontal"
                             VerticalAlignment="Center"
                             Margin="0,0,-12,0">
+                    <Button Height="28"
+                            Margin="0,0,10,0"
+                            Padding="10,0"
+                            VerticalAlignment="Center"
+                            Background="#22FFFFFF"
+                            BorderBrush="#33FFFFFF"
+                            BorderThickness="1"
+                            Foreground="White"
+                            FontWeight="SemiBold"
+                            Content="Información adicional"
+                            Click="AdditionalInfo_Click"/>
                     <Button Width="44" Height="44" Style="{StaticResource TitleBarButtonStyle}"
                             Click="Minimize_Click" ToolTip="Minimizar">
                         <TextBlock Text="─" Foreground="White" FontSize="16" FontWeight="SemiBold"
@@ -288,41 +299,6 @@
                         <StackPanel>
                             <TextBlock Text="{Binding SelectedTheoryTitle}" FontSize="16" FontWeight="SemiBold"/>
                             <TextBox Text="{Binding SelectedTheoryBody, Mode=OneWay}"
-                                     Margin="0,10,0,0"
-                                     Background="Transparent"
-                                     BorderThickness="0"
-                                     IsReadOnly="True"
-                                     TextWrapping="Wrap"
-                                     VerticalScrollBarVisibility="Auto"
-                                     HorizontalScrollBarVisibility="Disabled"
-                                     Padding="0"
-                                     Cursor="IBeam"/>
-                        </StackPanel>
-                    </Border>
-                </Grid>
-            </TabItem>
-
-            <TabItem Header="Esquema">
-                <Grid Margin="0,10,0,0">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="340"/>
-                        <ColumnDefinition Width="16"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
-
-                    <StackPanel Grid.Column="0">
-                        <TextBlock Text="Esquema" FontWeight="SemiBold"/>
-                        <ListBox ItemsSource="{Binding CheatSheetTopics}"
-                                 SelectedItem="{Binding SelectedCheatSheetTopic}"
-                                 DisplayMemberPath="Title"
-                                 Margin="0,8,0,0"
-                                 MinHeight="260"/>
-                    </StackPanel>
-
-                    <Border Grid.Column="2" Padding="12" Background="#0A000000" BorderBrush="#22000000" BorderThickness="1" CornerRadius="10">
-                        <StackPanel>
-                            <TextBlock Text="{Binding SelectedCheatSheetTitle}" FontSize="16" FontWeight="SemiBold"/>
-                            <TextBox Text="{Binding SelectedCheatSheetBody, Mode=OneWay}"
                                      Margin="0,10,0,0"
                                      Background="Transparent"
                                      BorderThickness="0"
