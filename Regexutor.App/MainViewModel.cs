@@ -13,6 +13,12 @@ namespace Regexutor.App;
 
 public sealed class MainViewModel : BindableBase
 {
+    private const int TabPractice = 0;
+    private const int TabTheory = 1;
+    private const int TabCheatSheet = 2;
+    private const int TabExams = 3;
+    private const int TabAbout = 4;
+
     private readonly IRegexRunner? _runner;
     private readonly string? _grepPath;
 
@@ -43,6 +49,34 @@ public sealed class MainViewModel : BindableBase
     public ObservableCollection<string> LastHints { get; } = new();
 
     public ObservableCollection<TheoryTopic> TheoryTopics { get; } = new();
+
+    public ObservableCollection<TheoryTopic> CheatSheetTopics { get; } = new();
+
+    private TheoryTopic? _selectedCheatSheetTopic;
+    public TheoryTopic? SelectedCheatSheetTopic
+    {
+        get => _selectedCheatSheetTopic;
+        set
+        {
+            if (!SetProperty(ref _selectedCheatSheetTopic, value)) return;
+            SelectedCheatSheetTitle = value?.Title ?? string.Empty;
+            SelectedCheatSheetBody = value?.Body ?? string.Empty;
+        }
+    }
+
+    private string _selectedCheatSheetTitle = string.Empty;
+    public string SelectedCheatSheetTitle
+    {
+        get => _selectedCheatSheetTitle;
+        private set => SetProperty(ref _selectedCheatSheetTitle, value);
+    }
+
+    private string _selectedCheatSheetBody = string.Empty;
+    public string SelectedCheatSheetBody
+    {
+        get => _selectedCheatSheetBody;
+        private set => SetProperty(ref _selectedCheatSheetBody, value);
+    }
 
     private TheoryTopic? _selectedTheoryTopic;
     public TheoryTopic? SelectedTheoryTopic
@@ -98,9 +132,11 @@ public sealed class MainViewModel : BindableBase
     // Así lo escrito en una pestaña no se copia a las otras, pero se conserva al volver.
     private readonly Dictionary<int, string> _patternByTab = new()
     {
-        [0] = string.Empty, // Práctica
-        [1] = string.Empty, // Teoría (no se usa, pero se conserva)
-        [2] = string.Empty, // Exámenes
+        [TabPractice] = string.Empty,   // Práctica
+        [TabTheory] = string.Empty,      // Teoría
+        [TabCheatSheet] = string.Empty,  // Esquema
+        [TabExams] = string.Empty,       // Exámenes
+        [TabAbout] = string.Empty,       // Acerca de
     };
 
     private void SavePatternForTab(int tabIndex) => _patternByTab[tabIndex] = Pattern ?? string.Empty;
@@ -251,26 +287,28 @@ public sealed class MainViewModel : BindableBase
         _goToTheoryAsyncInner = new AsyncCommand(GoToTheoryAsync, () => ActiveTheorySource is not null);
 
         SeedTheory();
+        SeedCheatSheet();
         SelectedExercise = PracticeExercises.FirstOrDefault();
         SelectedTheoryTopic = TheoryTopics.FirstOrDefault();
+        SelectedCheatSheetTopic = CheatSheetTopics.FirstOrDefault();
         RefreshCanEvaluate();
 
         _evaluateAsyncInner.RaiseCanExecuteChanged();
         _goToTheoryAsyncInner.RaiseCanExecuteChanged();
     }
 
-    private RegexExercise? ActiveTheorySource => SelectedTabIndex == 2 ? CurrentExamExercise : SelectedExercise;
+    private RegexExercise? ActiveTheorySource => SelectedTabIndex == TabExams ? CurrentExamExercise : SelectedExercise;
 
     private bool EvaluateCanExecute() =>
         _runner is not null && !IsEvaluating &&
-        (SelectedTabIndex == 0 || SelectedTabIndex == 2) &&
-        (SelectedTabIndex == 2 ? CurrentExamExercise is not null : SelectedExercise is not null);
+        (SelectedTabIndex == TabPractice || SelectedTabIndex == TabExams) &&
+        (SelectedTabIndex == TabExams ? CurrentExamExercise is not null : SelectedExercise is not null);
 
     private void RefreshCanEvaluate() => CanEvaluate = EvaluateCanExecute();
 
     private void RefreshDisplayedExerciseMetadata()
     {
-        if (SelectedTabIndex == 2)
+        if (SelectedTabIndex == TabExams)
         {
             if (CurrentExamExercise is null)
             {
@@ -317,9 +355,9 @@ public sealed class MainViewModel : BindableBase
         var ex = SelectedExamTemplate.Build(Random.Shared);
         _lastGeneratedExamSnapshot = ex;
         CurrentExamExercise = ex;
-        SelectedTabIndex = 2;
+        SelectedTabIndex = TabExams;
         Pattern = string.Empty;
-        SavePatternForTab(2);
+        SavePatternForTab(TabExams);
         LastResults.Clear();
         LastSummary = string.Empty;
         LastHints.Clear();
@@ -342,20 +380,20 @@ public sealed class MainViewModel : BindableBase
             IsEphemeralExam = true
         };
         CurrentExamExercise = replay;
-        SelectedTabIndex = 2;
+        SelectedTabIndex = TabExams;
         Pattern = string.Empty;
         LastResults.Clear();
         LastSummary = string.Empty;
         LastHints.Clear();
         HasHints = false;
-        SavePatternForTab(2);
+        SavePatternForTab(TabExams);
     }
 
     private void OnSelectedExerciseChanged()
     {
         LastResults.Clear();
         LastSummary = string.Empty;
-        if (SelectedTabIndex != 2)
+        if (SelectedTabIndex != TabExams)
             RefreshDisplayedExerciseMetadata();
         RefreshCanEvaluate();
         _evaluateAsyncInner.RaiseCanExecuteChanged();
@@ -1010,6 +1048,148 @@ public sealed class MainViewModel : BindableBase
         ));
     }
 
+    private void SeedCheatSheet()
+    {
+        CheatSheetTopics.Add(new TheoryTopic(
+            Title: "Esquema — Cómo leer este resumen",
+            Body:
+                "Este esquema está basado en un “cheat sheet” general de regex, traducido al español.\n\n" +
+                "IMPORTANTE: Regexutor usa grep (POSIX BRE/ERE). Por eso:\n" +
+                "- Algunas entradas del mundo PCRE/Perl (lookaround, modificadores /g, etc.) NO aplican aquí.\n" +
+                "- Cuando una sintaxis NO sea POSIX, lo indicamos como “(no en POSIX grep)”.\n\n" +
+                "Consejo: usa la pestaña Teoría para explicaciones largas; aquí es un mapa rápido."
+        ));
+
+        CheatSheetTopics.Add(new TheoryTopic(
+            Title: "Anclas (anchors)",
+            Body:
+                "^  Inicio de línea.\n" +
+                "$  Fin de línea.\n" +
+                "\\A Inicio de texto (no en POSIX grep).\n" +
+                "\\Z Fin de texto o antes del salto final (no en POSIX grep).\n" +
+                "\\z Fin de texto (no en POSIX grep).\n" +
+                "\\b Límite de palabra (no en POSIX ERE/BRE de grep; a veces existe como extensión GNU en otros modos).\n" +
+                "\\B No-límite de palabra (no en POSIX grep).\n" +
+                "\\G Inicio de la coincidencia anterior (no en POSIX grep).\n"
+        ));
+
+        CheatSheetTopics.Add(new TheoryTopic(
+            Title: "Clases de caracteres (character classes)",
+            Body:
+                ".   Cualquier carácter (en grep suele excluir el salto de línea).\n" +
+                "\\d Dígito (no en POSIX grep; usa [0-9] o [[:digit:]]).\n" +
+                "\\D No dígito (no en POSIX grep; usa [^0-9] o [^[:digit:]]).\n" +
+                "\\s Espacio en blanco (no en POSIX grep; usa [[:space:]]).\n" +
+                "\\S No espacio (no en POSIX grep; usa [^[:space:]]).\n" +
+                "\\w “carácter de palabra” (no en POSIX grep; aproxima con [[:alnum:]_]).\n" +
+                "\\W No-“palabra” (no en POSIX grep).\n" +
+                "\\xhh Hex (no en POSIX grep).\n" +
+                "\\cX Control (no en POSIX grep).\n"
+        ));
+
+        CheatSheetTopics.Add(new TheoryTopic(
+            Title: "POSIX [[:...:]] (grep)",
+            Body:
+                "[[:upper:]]  Letras mayúsculas.\n" +
+                "[[:lower:]]  Letras minúsculas.\n" +
+                "[[:alpha:]]  Letras.\n" +
+                "[[:alnum:]]  Letras y dígitos.\n" +
+                "[[:digit:]]  Dígitos.\n" +
+                "[[:xdigit:]] Dígitos hex.\n" +
+                "[[:punct:]]  Puntuación.\n" +
+                "[[:blank:]]  Espacio y tab.\n" +
+                "[[:space:]]  Espacios en blanco (incluye tab, etc.).\n" +
+                "[[:cntrl:]]  Controles.\n" +
+                "[[:graph:]]  Imprimibles excepto espacio.\n" +
+                "[[:print:]]  Imprimibles (incluye espacio).\n" +
+                "[[:word:]]   Letras/dígitos/_ (extensión GNU; no siempre en todos los POSIX).\n"
+        ));
+
+        CheatSheetTopics.Add(new TheoryTopic(
+            Title: "Cuantificadores (quantifiers)",
+            Body:
+                "*    0 o más.\n" +
+                "+    1 o más (ERE; en BRE suele ser literal o \\+ según GNU).\n" +
+                "?    0 o 1 (ERE; en BRE suele ser literal o \\? según GNU).\n" +
+                "{n}      Exactamente n (ERE; en BRE suele ser \\{n\\}).\n" +
+                "{n,}     n o más (según implementación).\n" +
+                "{n,m}    entre n y m.\n\n" +
+                "“Lazy / no codicioso” (*?, +?, ??, {n,m}?) → (no en POSIX grep)."
+        ));
+
+        CheatSheetTopics.Add(new TheoryTopic(
+            Title: "Grupos y rangos (groups & ranges)",
+            Body:
+                "(ab)   Grupo (ERE). En BRE: \\(ab\\).\n" +
+                "a|b    Alternancia (ERE). En BRE: a\\|b.\n" +
+                "[abc]  Uno de a/b/c.\n" +
+                "[^abc] Uno que NO sea a/b/c.\n" +
+                "[a-q]  Rango de a a q.\n" +
+                "[A-Q]  Rango de A a Q.\n" +
+                "[0-7]  Dígito 0..7.\n" +
+                "\\x     Referencia al grupo x (\\1..\\9) — GNU grep lo soporta en ERE/BRE, pero no es “núcleo POSIX”.\n\n" +
+                "Nota: los rangos son inclusivos."
+        ));
+
+        CheatSheetTopics.Add(new TheoryTopic(
+            Title: "Secuencias de escape",
+            Body:
+                "\\\\   Escapa el carácter siguiente (depende del motor).\n" +
+                "\\Q...\\E  Literaliza un bloque (no en POSIX grep).\n\n" +
+                "En POSIX grep, lo más común es escapar metacaracteres puntuales: \\. \\[ \\] \\^ \\$ etc."
+        ));
+
+        CheatSheetTopics.Add(new TheoryTopic(
+            Title: "Metacaracteres comunes",
+            Body:
+                "^  $  .  |  (  )  [  ]  {  }  *  +  ?\n\n" +
+                "En BRE, varios de estos NO son especiales salvo escape (p. ej. +, ?, |, ( ), { })."
+        ));
+
+        CheatSheetTopics.Add(new TheoryTopic(
+            Title: "Caracteres especiales (escapes típicos)",
+            Body:
+                "\\n  Nueva línea (no en POSIX grep como escape; en grep los patrones son por línea).\n" +
+                "\\r  Retorno de carro (no en POSIX grep).\n" +
+                "\\t  Tabulador (no estándar POSIX; puede funcionar en algunos motores, pero no cuentes con ello).\n" +
+                "\\v  Tab vertical (no en POSIX grep).\n" +
+                "\\f  Form feed (no en POSIX grep).\n" +
+                "\\ooo Octal (no en POSIX grep).\n" +
+                "\\xhh Hex (no en POSIX grep).\n"
+        ));
+
+        CheatSheetTopics.Add(new TheoryTopic(
+            Title: "Aserciones / Lookaround (no en POSIX grep)",
+            Body:
+                "?=   Lookahead positivo (no en POSIX grep).\n" +
+                "?!   Lookahead negativo (no en POSIX grep).\n" +
+                "?<=  Lookbehind positivo (no en POSIX grep).\n" +
+                "?<!  Lookbehind negativo (no en POSIX grep).\n" +
+                "?>   Subexpresión atómica (no en POSIX grep).\n" +
+                "?(cond)  Condicional (no en POSIX grep).\n" +
+                "?#   Comentario (no en POSIX grep)."
+        ));
+
+        CheatSheetTopics.Add(new TheoryTopic(
+            Title: "Modificadores del patrón (flags) (no en POSIX grep)",
+            Body:
+                "g  Global (no aplica a grep: grep ya busca coincidencia por línea).\n" +
+                "i  Case-insensitive (en grep se hace con -i, no con modificador en la regex).\n" +
+                "m  Multiline (grep es por líneas; no es un flag dentro del patrón).\n" +
+                "s  Dotall (no en POSIX grep).\n" +
+                "x  Ignorar espacios/comentarios (no en POSIX grep).\n" +
+                "U  Ungreedy (no en POSIX grep).\n" +
+                "P  PCRE (grep -P; Regexutor no lo usa)."
+        ));
+
+        CheatSheetTopics.Add(new TheoryTopic(
+            Title: "Reemplazo de cadenas (no en Regexutor)",
+            Body:
+                "Regexutor NO hace sustituciones; solo evalúa si hay match.\n\n" +
+                "En otros motores, suelen existir referencias como $1, $2 o \\1 en el reemplazo, y tokens tipo $&, $`, $'."
+        ));
+    }
+
     private async Task EvaluateAsync()
     {
         var exercise = ActiveTheorySource;
@@ -1174,8 +1354,8 @@ public sealed class MainViewModel : BindableBase
         if (topic is not null)
             SelectedTheoryTopic = topic;
 
-        // Switch to Teoría tab (0=Práctica, 1=Teoría)
-        SelectedTabIndex = 1;
+        // Switch to Teoría tab
+        SelectedTabIndex = TabTheory;
         return Task.CompletedTask;
     }
 
