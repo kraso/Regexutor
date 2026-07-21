@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -65,11 +66,11 @@ public sealed class GrepRegexRunner : IRegexRunner
         => TryLocateGrep(baseDirectory: null, searchPath: true);
 
     /// <summary>
-    /// Locate grep.exe for portable/distributed usage.
+    /// Locate grep for portable/distributed usage (Windows: grep.exe; Unix: grep).
     /// Search order:
-    /// 1) REGEXUTOR_GREP env var (explicit path to grep.exe)
-    /// 2) baseDirectory\grep.exe
-    /// 3) baseDirectory\tools\grep\grep.exe
+    /// 1) REGEXUTOR_GREP env var (explicit path)
+    /// 2) baseDirectory/grep[.exe]
+    /// 3) baseDirectory/tools/grep/grep[.exe]
     /// 4) PATH (optional)
     /// </summary>
     public static string? TryLocateGrep(string? baseDirectory, bool searchPath = true)
@@ -78,15 +79,34 @@ public sealed class GrepRegexRunner : IRegexRunner
         if (!string.IsNullOrWhiteSpace(explicitPath) && File.Exists(explicitPath))
             return explicitPath;
 
+        static IEnumerable<string> GrepFileNamesInBaseDir()
+        {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                yield return "grep.exe";
+                yield return "grep";
+            }
+            else
+            {
+                yield return "grep";
+            }
+        }
+
         if (!string.IsNullOrWhiteSpace(baseDirectory))
         {
-            var direct = Path.Combine(baseDirectory, "grep.exe");
-            if (File.Exists(direct))
-                return direct;
+            foreach (var name in GrepFileNamesInBaseDir())
+            {
+                var direct = Path.Combine(baseDirectory, name);
+                if (File.Exists(direct))
+                    return direct;
+            }
 
-            var tools = Path.Combine(baseDirectory, "tools", "grep", "grep.exe");
-            if (File.Exists(tools))
-                return tools;
+            foreach (var name in GrepFileNamesInBaseDir())
+            {
+                var tools = Path.Combine(baseDirectory, "tools", "grep", name);
+                if (File.Exists(tools))
+                    return tools;
+            }
         }
 
         if (!searchPath)
@@ -101,9 +121,13 @@ public sealed class GrepRegexRunner : IRegexRunner
             if (string.IsNullOrWhiteSpace(dir))
                 continue;
 
-            var candidate = Path.Combine(dir.Trim(), "grep.exe");
-            if (File.Exists(candidate))
-                return candidate;
+            var trimmed = dir.Trim();
+            foreach (var name in GrepFileNamesInBaseDir())
+            {
+                var candidate = Path.Combine(trimmed, name);
+                if (File.Exists(candidate))
+                    return candidate;
+            }
         }
 
         return null;
@@ -360,6 +384,9 @@ public sealed class GrepRegexRunner : IRegexRunner
 public abstract class BindableBase : INotifyPropertyChanged
 {
     public event PropertyChangedEventHandler? PropertyChanged;
+
+    protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+        => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 
     protected bool SetProperty<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)
     {

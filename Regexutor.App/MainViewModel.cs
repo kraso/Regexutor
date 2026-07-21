@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using System.Windows.Media;
+using Regexutor.App.Services;
 using Regexutor.Core;
 
 namespace Regexutor.App;
@@ -253,6 +254,77 @@ public sealed class MainViewModel : BindableBase
         }
     }
 
+    // ───────────────────── Pi Network auth state ─────────────────────
+
+    private bool _isAuthenticated;
+    public bool IsAuthenticated
+    {
+        get => _isAuthenticated;
+        private set
+        {
+            if (!SetProperty(ref _isAuthenticated, value))
+                return;
+            OnPropertyChanged(nameof(IsNotAuthenticated));
+        }
+    }
+
+    public bool IsNotAuthenticated => !IsAuthenticated;
+
+    private bool _isAuthenticating;
+    public bool IsAuthenticating
+    {
+        get => _isAuthenticating;
+        private set => SetProperty(ref _isAuthenticating, value);
+    }
+
+    private string _piUsername = string.Empty;
+    public string PiUsername
+    {
+        get => _piUsername;
+        private set => SetProperty(ref _piUsername, value);
+    }
+
+    private string _authStatus = string.Empty;
+    public string AuthStatus
+    {
+        get => _authStatus;
+        private set => SetProperty(ref _authStatus, value);
+    }
+
+    private PiSession? _currentSession;
+    public PiSession? CurrentSession => _currentSession;
+
+    private readonly RelayCommand _signInInner;
+    public ICommand SignInCommand => _signInInner;
+
+    private readonly RelayCommand _signOutInner;
+    public ICommand SignOutCommand => _signOutInner;
+
+    /// <summary>Set by MainWindow after a successful Pi auth + validation.</summary>
+    public void SetAuthenticated(PiSession session)
+    {
+        _currentSession = session;
+        PiUsername = session.Username;
+        AuthStatus = $"conectado como {session.Username}";
+        IsAuthenticated = true;
+    }
+
+    public void ClearSession()
+    {
+        _currentSession = null;
+        PiUsername = string.Empty;
+        AuthStatus = string.Empty;
+        IsAuthenticated = false;
+    }
+
+    /// <summary>Set by MainWindow when Pi auth is in progress.</summary>
+    public void SetAuthenticating(bool authenticating, string? statusMessage = null)
+    {
+        IsAuthenticating = authenticating;
+        if (statusMessage is not null)
+            AuthStatus = statusMessage;
+    }
+
     public MainViewModel()
     {
         _grepPath = GrepRegexRunner.TryLocateGrep(AppContext.BaseDirectory, searchPath: true);
@@ -275,6 +347,10 @@ public sealed class MainViewModel : BindableBase
         _repeatExamInner = new RelayCommand(
             RepeatLastExam,
             () => _lastGeneratedExamSnapshot is not null && _runner is not null);
+
+        // Pi auth commands — CanExecute toggled by MainWindow after the service is ready.
+        _signInInner = new RelayCommand(() => { }, () => !IsAuthenticating && !IsAuthenticated);
+        _signOutInner = new RelayCommand(() => { }, () => IsAuthenticated);
 
         SeedExercises();
         foreach (var t in ExamCatalog.Templates)
