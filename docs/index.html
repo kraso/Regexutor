@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
     <title>Regexutor — Pi Network</title>
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
+    <meta http-equiv="Pragma" content="no-cache"/>
+    <meta http-equiv="Expires" content="0"/>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -67,18 +69,17 @@
 
 <script>
 var _L = [];
-function dbg(m) { _L.push(m); var el = document.getElementById('log'); if(el) el.textContent = _L.join('\n'); }
-dbg('Page loaded. Loading Pi SDK...');
+function dbg(m) { _L.push(m); document.getElementById('log').textContent = _L.join('\n'); }
+dbg('v4 - ' + Date.now());
+dbg('Loading Pi SDK...');
 </script>
-<script src="https://sdk.minepi.com/pi-sdk.js?v=v3"></script>
+<script src="https://sdk.minepi.com/pi-sdk.js?v=v4hash998"></script>
 <script>
 dbg('SDK loaded. typeof Pi = ' + typeof Pi);
 </script>
 <script>
 async function doAuth() {
     document.getElementById('btn').disabled = true;
-    var log = document.getElementById('log');
-
     dbg('\n--- Pi.init({version:"2.0"}) ---');
     try {
         await Pi.init({version: '2.0'});
@@ -92,15 +93,15 @@ async function doAuth() {
     dbg('\n--- Pi.authenticate(["username"]) ---');
     try {
         var auth = await Pi.authenticate(['username']);
-        log.className = 'ok';
-        dbg('AUTH OK!');
+        document.getElementById('log').className = 'ok';
+        dbg('AUTH SUCCESS!');
         dbg('Username: ' + auth.user.username);
-        dbg('AccessToken: ' + auth.accessToken);
+        dbg('Token: ' + auth.accessToken.substring(0, 20) + '...');
     } catch(e) {
-        log.className = 'err';
+        document.getElementById('log').className = 'err';
         dbg('authenticate FAIL: ' + e.message);
+        dbg('Stack: ' + (e.stack || 'none').substring(0, 300));
     }
-
     document.getElementById('btn').disabled = false;
 }
 </script>
