@@ -372,7 +372,7 @@
         try {
             var user = await PiAuth.login();
             state.piUser = user;
-            setLoggedIn(user.username);
+            $("pi-username").textContent = user.username;
             showApp();
         } catch (e) {
             var msg = e.message || String(e);
@@ -385,6 +385,8 @@
     }
 
     function showApp() {
+        $("auth-overlay").style.display = "none";
+        $("pi-user-badge").style.display = "";
         renderPractice();
         renderTheory();
         renderExams();
@@ -398,9 +400,15 @@
         $("exam-eval-btn").onclick = evaluateExam;
         $("hint-btn").onclick = showHint;
 
+        renderPractice();
+        renderTheory();
+        renderExams();
+        renderAbout();
+        show("practice");
+
         var saved = PiAuth.tryRestore();
         if (saved) {
-            setLoggedIn(saved.username);
+            state.piUser = saved;
             showApp();
         } else {
             $("auth-overlay").style.display = "";
@@ -410,12 +418,7 @@
         $("loading-status").textContent = "Cargando motor grep (WASM)\u2026";
         try {
             await GrepEngine.init();
-            $("loading-status").style.display = "none";
-        } catch (e) {
-            $("loading-status").textContent = "Error grep: " + e.message;
-            $("loading-status").style.display = "";
-        }
-
+        } catch (e) {}
         $("loading-status").style.display = "none";
     }
 
