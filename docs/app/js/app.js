@@ -292,16 +292,6 @@
     }
 
     async function boot() {
-        $("loading-text").textContent = "Cargando motor grep (WASM)…";
-        try {
-            await GrepEngine.init();
-        } catch (e) {
-            $("loading-text").textContent = "Error cargando grep: " + e.message;
-            return;
-        }
-
-        $("loading-text").textContent = "Listo.";
-
         $("eval-btn").onclick = evaluate;
         $("exam-eval-btn").onclick = evaluateExam;
         $("pi-login-btn").onclick = initPiLogin;
@@ -311,6 +301,16 @@
         renderExams();
         renderAbout();
         show("practice");
+
+        $("loading-status").style.display = "";
+        $("loading-status").textContent = "Cargando motor grep (WASM)…";
+        try {
+            await GrepEngine.init();
+            $("loading-status").style.display = "none";
+        } catch (e) {
+            $("loading-status").textContent = "Error grep: " + e.message;
+            $("loading-status").style.display = "";
+        }
     }
 
     if (document.readyState === "loading") {
