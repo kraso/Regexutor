@@ -1,6 +1,6 @@
 window.GrepEngine = (function () {
-    let _cli = null;
-    let _ready = false;
+    var _cli = null;
+    var _ready = false;
 
     async function init() {
         if (_ready) return;
@@ -8,19 +8,15 @@ window.GrepEngine = (function () {
         _ready = true;
     }
 
-    function _args(pattern, dialect) {
-        return dialect === "BRE" ? ["-c", pattern] : ["-E", "-c", pattern];
-    }
-
     async function evaluate(pattern, input, dialect) {
         if (!pattern) {
             return { match: false, count: 0 };
         }
         _cli.stdin = input + "\n";
+        var args = dialect === "BRE" ? [pattern] : ["-E", pattern];
         try {
-            var result = await _cli.exec("grep", _args(pattern, dialect));
-            var count = parseInt(result.trim()) || 0;
-            return { match: count > 0, count: count };
+            var result = await _cli.exec("grep", args);
+            return { match: result.length > 0, count: 1 };
         } catch (e) {
             return { match: false, count: 0 };
         }
