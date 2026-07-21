@@ -48,9 +48,16 @@
             font-size: 15px;
             cursor: pointer;
             font-weight: 600;
+            margin: 4px;
         }
         button:hover { background: #651fff; }
         button:disabled { background: #555; cursor: default; }
+        a.app-link {
+            display: inline-block;
+            margin-top: 16px;
+            color: #ffb74d;
+            font-size: 14px;
+        }
     </style>
 </head>
 <body>
@@ -59,6 +66,8 @@
     <p class="subtitle">Herramienta educativa de expresiones regulares</p>
     <div id="status" class="wait">Iniciando&hellip;</div>
     <button id="btn" onclick="doAuth()">Iniciar sesi&oacute;n con Pi</button>
+    <br/>
+    <a class="app-link" href="app/">Abrir la app &rarr;</a>
 </div>
 
 <script src="https://sdk.minepi.com/pi-sdk.js"></script>
@@ -83,11 +92,11 @@
         try {
             var auth = await Pi.authenticate(['username']);
             statusEl.className = 'ok';
-            statusEl.textContent = 'Sesión iniciada como ' + auth.user.username;
+            statusEl.textContent = 'Sesion iniciada como ' + auth.user.username;
             window.piAuth = auth;
         } catch(e) {
             statusEl.className = 'err';
-            statusEl.textContent = 'Error de autenticación: ' + e.message;
+            statusEl.textContent = 'Error de autenticacion: ' + e.message;
         }
 
         btn.disabled = false;

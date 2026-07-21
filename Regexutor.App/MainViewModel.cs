@@ -23,8 +23,8 @@ public sealed class MainViewModel : BindableBase
     private readonly string? _grepPath;
 
     public string AppName => "Regexutor ©";
-    public string AppVersion => "1.0.0";
-    public string AppDate => "27/04/2026";
+    public string AppVersion => "1.2.0";
+    public string AppDate => "21/07/2026";
     public string AppAuthor => "Marcos Calabrés Ibáñez";
     public string AppEmail => "markbiophysicist@gmail.com";
 

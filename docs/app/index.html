@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+    <title>Regexutor — Práctica de Regex</title>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
+    <link rel="stylesheet" href="css/style.css"/>
+    <script src="https://biowasm.com/cdn/v3/aioli.js"></script>
+</head>
+<body>
+
+<!-- Top bar -->
+<div class="topbar">
+    <h1>Regexutor &copy;</h1>
+    <div class="pi-area">
+        <button id="pi-login-btn">Iniciar sesi&oacute;n con Pi</button>
+        <span id="pi-user-badge">&check; <span id="pi-username"></span></span>
+    </div>
+</div>
+
+<!-- Nav -->
+<nav class="nav" id="nav-links"></nav>
+
+<div class="content">
+
+    <!-- Loading -->
+    <div id="loading" class="loading view" style="">
+        <p id="loading-text">Cargando&hellip;</p>
+    </div>
+
+    <!-- Practice -->
+    <div id="practice" class="view">
+        <div class="card">
+            <h2>Pr&aacute;ctica</h2>
+            <label for="exercise-select">Ejercicio</label>
+            <select id="exercise-select"></select>
+        </div>
+        <div class="card" id="practice-detail" style="display:none">
+            <h3 id="exercise-dialect"></h3>
+            <p id="exercise-prompt" style="margin-bottom:12px;line-height:1.6"></p>
+            <label for="pattern-input">Tu expresi&oacute;n regular</label>
+            <input type="text" id="pattern-input" class="regex-input" placeholder="Escribe tu regex aqu&iacute;..." autocomplete="off" spellcheck="false"/>
+            <button id="eval-btn" class="btn" disabled>Evaluar</button>
+            <div id="eval-summary"></div>
+            <ul id="eval-hints" class="hints" style="display:none"></ul>
+            <div id="test-results"></div>
+        </div>
+    </div>
+
+    <!-- Theory -->
+    <div id="theory" class="view">
+        <div class="card">
+            <h2>Teor&iacute;a</h2>
+            <label for="theory-select">Temario</label>
+            <select id="theory-select"></select>
+        </div>
+        <div class="theory-content">
+            <h3 id="theory-title" style="margin-bottom:10px"></h3>
+            <div id="theory-body" style="white-space:pre-wrap"></div>
+        </div>
+    </div>
+
+    <!-- Exams -->
+    <div id="exams" class="view">
+        <div class="card">
+            <h2>Ex&aacute;menes</h2>
+            <label for="exam-template-select">Plantilla</label>
+            <select id="exam-template-select"></select>
+            <div class="btn-row" style="margin-top:10px">
+                <button id="gen-exam-btn" class="btn">Nuevo examen</button>
+                <button id="repeat-exam-btn" class="btn btn-secondary" disabled>Repetir</button>
+            </div>
+        </div>
+        <div class="card" id="exam-detail" style="display:none">
+            <h3 id="exam-dialect"></h3>
+            <p id="exam-prompt" style="margin-bottom:12px;line-height:1.6"></p>
+            <label for="exam-pattern-input">Tu expresi&oacute;n regular</label>
+            <input type="text" id="exam-pattern-input" class="regex-input" placeholder="Escribe tu regex aqu&iacute;..." autocomplete="off" spellcheck="false"/>
+            <button id="exam-eval-btn" class="btn" disabled>Evaluar</button>
+            <div id="exam-summary" class="summary" style="display:none"></div>
+            <div id="exam-results"></div>
+        </div>
+    </div>
+
+    <!-- About -->
+    <div id="about" class="view">
+        <div class="card" style="text-align:center">
+            <h2>Regexutor &copy;</h2>
+            <dl class="about-grid" style="text-align:left;max-width:360px;margin:16px auto 0">
+                <dt>Versi&oacute;n</dt><dd id="about-version"></dd>
+                <dt>Autor</dt><dd>Marcos Calabr&eacute;s Ib&aacute;&ntilde;ez</dd>
+                <dt>Email</dt><dd>markbiophysicist@gmail.com</dd>
+            </dl>
+        </div>
+    </div>
+
+</div>
+
+<script src="js/exercises.js"></script>
+<script src="js/theory.js"></script>
+<script src="js/exams.js"></script>
+<script src="js/grep-engine.js"></script>
+<script src="js/pi-auth.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
