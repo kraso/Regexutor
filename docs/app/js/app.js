@@ -66,6 +66,7 @@
         var dialectEl = $("exercise-dialect");
         var inputEl = $("pattern-input");
         var btn = $("eval-btn");
+        var hintBtn = $("hint-btn");
         var resultsEl = $("test-results");
         var summaryEl = $("eval-summary");
         var hintsEl = $("eval-hints");
@@ -80,6 +81,7 @@
         dialectEl.textContent = ex.dialect === "ERE" ? "POSIX ERE (grep -E)" : "POSIX BRE (grep)";
         inputEl.value = state.pattern;
         btn.disabled = false;
+        hintBtn.disabled = false;
 
         if (state.results) {
             renderResults(resultsEl, state.results);
@@ -115,6 +117,89 @@
 
     function escHtml(s) {
         return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    }
+
+    function generateHint(exercise) {
+        if (!exercise) return "";
+        var id = exercise.id || "";
+        var p = (exercise.prompt || "").toLowerCase();
+        var d = exercise.dialect;
+
+        if (p.indexOf("toda la línea") >= 0 || p.indexOf("solo si") >= 0) {
+            return "Este ejercicio pide 'toda la línea'. Usa ^ al inicio y $ al final para anclar.";
+        }
+        if (id.indexOf("posix") >= 0 || p.indexOf("[[:") >= 0) {
+            return "Usa clases POSIX como [[:digit:]], [[:alpha:]], [[:space:]]. Recuerda los dobles corchetes.";
+        }
+        if (id.indexOf("backref") >= 0 || p.indexOf("\\1") >= 0) {
+            return "Agrupa con ( ) y repite con \\1. Ejemplo: ^(.)\\1$ para dos caracteres iguales.";
+        }
+        if (id.indexOf("alternation") >= 0 || id.indexOf("yes-no") >= 0) {
+            return "Usa alternancia | entre paréntesis: (yes|no). Para cuantificar el grupo: (yes|no)+";
+        }
+        if (id.indexOf("negated") >= 0 || p.indexOf("no contiene") >= 0 || p.indexOf("sin") >= 0) {
+            return "Para 'sin dígitos', usa una clase negada con repetición: ^[^0-9]*$ o ^[^[:digit:]]*$";
+        }
+        if (id.indexOf("quantifier") >= 0 || p.indexOf("{m,n}") >= 0) {
+            return "Usa cuantificadores de rango: {min,max}. Ejemplo: ^[0-9]{2,4}$ para 2-4 dígitos.";
+        }
+        if (id.indexOf("ends-with") >= 0) {
+            return "Para 'termina en X', usa $ al final: algo$";
+        }
+        if (id.indexOf("starts-with") >= 0 || p.indexOf("primer carácter") >= 0) {
+            return "Para 'empieza con X', usa ^ al inicio: ^algo";
+        }
+        if (id.indexOf("email") >= 0) {
+            return "Busca el patrón @ como separador. No necesitas validación completa, solo detectar algo@algo.";
+        }
+        if (id.indexOf("phone") >= 0) {
+            return "Formato fijo: 3 dígitos, guion, 3 dígitos, guion, 3 dígitos. Los guiones son literales.";
+        }
+        if (id.indexOf("host-port") >= 0) {
+            return "HOST: minúsculas a-z de 3-6 caracteres. PORT: 2-4 dígitos. El ':' es literal.";
+        }
+        if (id.indexOf("literal-plus") >= 0) {
+            return "En BRE, '+' es literal. No necesitas escaparlo para buscar C++.";
+        }
+        if (id.indexOf("escaped-plus") >= 0 || id.indexOf("bre-2") >= 0) {
+            return "En BRE GNU, \\+ es el cuantificador 'uno o más'. Sin escape, + es literal.";
+        }
+        if (id.indexOf("literal-dot") >= 0 || id.indexOf("bre-3") >= 0) {
+            return "En BRE, el punto es cualquier carácter. Para punto literal, escapa: \\.";
+        }
+        if (d === "BRE") {
+            return "Recuerda: en BRE, + ? | ( ) no son operadores. Usa \\+ \\? \\| \\( \\) o cambia a ERE.";
+        }
+        if (d === "ERE") {
+            return "En ERE (grep -E), + ? | ( ) son operadores normales. No necesitas escaparlos.";
+        }
+        return "Escribe tu expresión regular y pulsa Evaluar para comprobar.";
+    }
+
+    function showHint() {
+        var ex = state.exercise;
+        if (!ex) return;
+        var hint = generateHint(ex);
+        var hintsEl = $("eval-hints");
+        hintsEl.innerHTML = "<li>" + hint + "</li>";
+        hintsEl.style.display = "";
+    }
+
+    function showExamHint() {
+        var ex = state.examExercise;
+        if (!ex) return;
+        var hint = generateHint(ex);
+        var resultsEl = $("exam-results");
+        var existing = resultsEl.previousElementSibling;
+        var hintDiv = document.getElementById("exam-hint-box");
+        if (!hintDiv) {
+            hintDiv = document.createElement("div");
+            hintDiv.id = "exam-hint-box";
+            hintDiv.className = "hints";
+            $("exam-eval-btn").parentNode.parentNode.appendChild(hintDiv);
+        }
+        hintDiv.innerHTML = hint;
+        hintDiv.style.display = "";
     }
 
     async function evaluate() {
@@ -197,6 +282,7 @@
         var promptEl = $("exam-prompt");
         var inputEl = $("exam-pattern-input");
         var btn = $("exam-eval-btn");
+        var hintBtn = $("exam-hint-btn");
         var resultsEl = $("exam-results");
         var summaryEl = $("exam-summary");
         var dialectEl = $("exam-dialect");
@@ -211,6 +297,7 @@
         dialectEl.textContent = ex.dialect === "ERE" ? "POSIX ERE (grep -E)" : "POSIX BRE (grep)";
         inputEl.value = state.pattern;
         btn.disabled = false;
+        hintBtn.disabled = false;
 
         if (state.results) {
             renderResults(resultsEl, state.results);
@@ -301,6 +388,8 @@
         $("eval-btn").onclick = evaluate;
         $("exam-eval-btn").onclick = evaluateExam;
         $("pi-login-btn").onclick = initPiLogin;
+        $("hint-btn").onclick = showHint;
+        $("exam-hint-btn").onclick = showExamHint;
 
         var saved = PiAuth.tryRestore();
         if (saved) {

@@ -21,6 +21,8 @@ body {
     background: linear-gradient(160deg, var(--bg-dark) 0%, var(--bg-mid) 45%, var(--bg-light) 100%);
     color: var(--text);
     min-height: 100vh;
+    user-select: text;
+    -webkit-user-select: text;
 }
 
 /* ── Top bar ── */
@@ -87,8 +89,15 @@ body {
     max-width: 900px;
     margin: 0 auto;
     padding: 16px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
 }
 .view { display: none; }
+
+p, label, span, dd, dt, td, th, h1, h2, h3, option, button, a {
+    user-select: text;
+    -webkit-user-select: text;
+}
 
 /* ── Cards ── */
 .card {
