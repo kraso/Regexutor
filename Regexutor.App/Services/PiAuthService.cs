@@ -20,8 +20,6 @@ public sealed class PiAuthService : IDisposable
     private TaskCompletionSource<bool>? _initTcs;
     private TaskCompletionSource<PiAuthResult>? _authTcs;
 
-    // ── Replace with your Pi app's client ID from https://developer.minepi.com ──
-    private const string ClientId = "d25bea1a-3df5-473c-9788-cdfc5c13df64";
     private const string PiApiBase = "https://api.minepi.com/v2";
 
     private static readonly JsonSerializerOptions s_json = new()
@@ -56,7 +54,7 @@ public sealed class PiAuthService : IDisposable
         await Task.Delay(500);
     }
 
-    /// <summary>Call Pi.init(clientId) in the browser context.</summary>
+    /// <summary>Call Pi.init() in the browser context.</summary>
     public async Task<bool> InitPiAsync(CancellationToken ct = default)
     {
         await EnsureReadyAsync();
@@ -64,7 +62,7 @@ public sealed class PiAuthService : IDisposable
         _initTcs = new TaskCompletionSource<bool>();
         using var reg = ct.Register(() => _initTcs.TrySetResult(false));
 
-        await _webView.CoreWebView2!.ExecuteScriptAsync($"window.__piInit('{ClientId}')");
+        await _webView.CoreWebView2!.ExecuteScriptAsync("window.__piInit()");
         return await _initTcs.Task;
     }
 
@@ -185,10 +183,10 @@ public sealed class PiAuthService : IDisposable
             }
 
             /* Called from C#: Pi.init() */
-            window.__piInit = async function(clientId) {
+            window.__piInit = async function() {
                 try {
                     await _waitForPi(15000);
-                    await Pi.init({ clientId: clientId });
+                    await Pi.init({ version: '2.0' });
                     _post({ action:'init', success:true });
                 } catch(e) {
                     _post({ action:'init', success:false, error: e.message || String(e) });

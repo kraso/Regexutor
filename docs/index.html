@@ -86,7 +86,7 @@
         try {
             await waitForPi(15000);
             setStatus('Inicializando Pi\u2026', 'wait');
-            await Pi.init({ version: "2.0", appId: window.__PI_APP_ID || 'regexutor' });
+            await Pi.init({ version: "2.0" });
             setStatus('Autenticando con Pi\u2026 Pulsa "Approve" en Pi Browser.', 'wait');
             var auth = await Pi.authenticate({ scopes: ['username'] });
             setStatus('\u2705 Autenticado como: ' + auth.user.username, 'ok');
