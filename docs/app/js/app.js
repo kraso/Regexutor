@@ -393,15 +393,7 @@
             $("loading-status").style.display = "";
         }
 
-        if (!saved && PiAuth.isAvailable()) {
-            try {
-                var user = await PiAuth.login();
-                state.piUser = user;
-                setLoggedIn(user.username);
-            } catch (e) {
-                /* keep button visible for manual login */
-            }
-        }
+        $("loading-status").style.display = "none";
     }
 
     if (document.readyState === "loading") {

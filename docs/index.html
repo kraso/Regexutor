@@ -95,6 +95,7 @@
             statusEl.textContent = 'Sesion iniciada como ' + auth.user.username;
             localStorage.setItem('regexutor_pi_user', JSON.stringify(auth.user));
             window.piAuth = auth;
+            document.getElementById('app-link').href = 'app/?user=' + encodeURIComponent(auth.user.username);
         } catch(e) {
             statusEl.className = 'err';
             statusEl.textContent = 'Error de autenticacion: ' + e.message;

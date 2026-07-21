@@ -13,6 +13,15 @@ window.PiAuth = (function () {
 
     function _loadSaved() {
         try {
+            var params = new URLSearchParams(window.location.search);
+            var urlUser = params.get("user");
+            if (urlUser) {
+                var user = { username: urlUser };
+                _saveUser(user);
+                return user;
+            }
+        } catch (e) {}
+        try {
             var raw = localStorage.getItem(STORAGE_KEY);
             if (raw) { _user = JSON.parse(raw); return _user; }
         } catch (e) {}
