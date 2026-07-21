@@ -49,12 +49,12 @@ window.EXERCISES = [
   {
     id: "ere-2-email-like",
     title: "Nivel 2 (ERE): detectar 'algo@algo' (simplificado)",
-    prompt: "Escribe una ERE que haga match si existe un patrón tipo usuario@dominio (simplificado, sin validar RFC).",
+    prompt: "Escribe una ERE anclada con ^ al inicio que haga match SOLO si la línea contiene un patrón tipo usuario@dominio (simplificado, sin validar RFC). Usa ^ para anclar al inicio.",
     dialect: "ERE",
     hints: [
-      "Busca un patrón que tenga algo antes de @ y algo después.",
-      "Usa [^@]+ para el usuario (uno o más que no sean @) y [^@]+ para el dominio.",
-      "Solución: [^@]+@[^@]+"
+      "Necesitas que la línea empiece con el patrón. Usa ^ para anclar al inicio.",
+      "Después de ^, usa [^@]+ para el usuario (uno o más que no sean @), luego @, y [^@]+ para el dominio.",
+      "Solución: ^[^@]+@[^@]+"
     ],
     tests: [
       ["contacto@ejemplo.com", true], ["sin arroba", false], ["a@b", true],
