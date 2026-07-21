@@ -185,23 +185,6 @@
         hintsEl.style.display = "";
     }
 
-    function showExamHint() {
-        var ex = state.examExercise;
-        if (!ex) return;
-        var hint = generateHint(ex);
-        var resultsEl = $("exam-results");
-        var existing = resultsEl.previousElementSibling;
-        var hintDiv = document.getElementById("exam-hint-box");
-        if (!hintDiv) {
-            hintDiv = document.createElement("div");
-            hintDiv.id = "exam-hint-box";
-            hintDiv.className = "hints";
-            $("exam-eval-btn").parentNode.parentNode.appendChild(hintDiv);
-        }
-        hintDiv.innerHTML = hint;
-        hintDiv.style.display = "";
-    }
-
     async function evaluate() {
         if (!state.exercise) return;
         var btn = $("eval-btn");
@@ -282,7 +265,6 @@
         var promptEl = $("exam-prompt");
         var inputEl = $("exam-pattern-input");
         var btn = $("exam-eval-btn");
-        var hintBtn = $("exam-hint-btn");
         var resultsEl = $("exam-results");
         var summaryEl = $("exam-summary");
         var dialectEl = $("exam-dialect");
@@ -297,7 +279,6 @@
         dialectEl.textContent = ex.dialect === "ERE" ? "POSIX ERE (grep -E)" : "POSIX BRE (grep)";
         inputEl.value = state.pattern;
         btn.disabled = false;
-        hintBtn.disabled = false;
 
         if (state.results) {
             renderResults(resultsEl, state.results);
@@ -308,6 +289,7 @@
             resultsEl.innerHTML = "";
             summaryEl.style.display = "none";
         }
+    }
     }
 
     function generateExam() {
@@ -389,7 +371,6 @@
         $("exam-eval-btn").onclick = evaluateExam;
         $("pi-login-btn").onclick = initPiLogin;
         $("hint-btn").onclick = showHint;
-        $("exam-hint-btn").onclick = showExamHint;
 
         var saved = PiAuth.tryRestore();
         if (saved) {
