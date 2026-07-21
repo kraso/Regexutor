@@ -20,7 +20,7 @@
             border: 1px solid rgba(255,255,255,0.15);
             border-radius: 16px;
             padding: 40px;
-            max-width: 420px;
+            max-width: 480px;
             width: 90%;
             text-align: center;
         }
@@ -30,7 +30,7 @@
             padding: 16px;
             border-radius: 10px;
             margin-bottom: 20px;
-            font-size: 14px;
+            font-size: 12px;
             line-height: 1.6;
             background: rgba(255,255,255,0.05);
             text-align: left;
@@ -64,49 +64,50 @@
 
 <script>
     var log = [];
-    function setStatus(text, cls) {
-        document.getElementById('status').textContent = text;
-        document.getElementById('status').className = cls;
+    function dbg(msg) { log.push(msg); document.getElementById('status').textContent = log.join('\n'); }
+    dbg('Pre-Pi: typeof=' + typeof Pi);
+</script>
+<script>window._prePi = typeof Pi;</script>
+<script src="https://sdk.minepi.com/pi-sdk.js?v=3"></script>
+<script>
+    dbg('Post-SDK: typeof=' + typeof Pi + ' (was ' + window._prePi + ')');
+    if (typeof Pi !== 'undefined') {
+        dbg('Pi.init type=' + typeof Pi.init);
+        dbg('Pi.authenticate type=' + typeof Pi.authenticate);
     }
-    function dbg(msg) { log.push(msg); setStatus(log.join('\n'), 'wait'); }
-    dbg('Step 1: page loaded, Pi type=' + typeof Pi);
-</script>
-<script>
-    dbg('Step 2: Pi type after inline script=' + typeof Pi);
-    window.addEventListener('load', function() {
-        dbg('Step 3: window.load fired, Pi type=' + typeof Pi);
-        setTimeout(function() {
-            dbg('Step 4: after 2s delay, Pi type=' + typeof Pi +
-                ', hasInit=' + (typeof Pi !== 'undefined' ? typeof Pi.init : 'N/A') +
-                ', hasAuth=' + (typeof Pi !== 'undefined' ? typeof Pi.authenticate : 'N/A'));
-        }, 2000);
-    });
-</script>
-<script src="https://sdk.minepi.com/pi-sdk.js"></script>
-<script>
-    dbg('Step 5: after SDK script tag, Pi type=' + typeof Pi);
 </script>
 <script>
     async function doAuth() {
         document.getElementById('btn').disabled = true;
-        dbg('Step 6: doAuth called, Pi type=' + typeof Pi);
+        dbg('\n--- doAuth ---');
+        dbg('Pi type=' + typeof Pi);
 
         if (typeof Pi === 'undefined') {
-            dbg('ERROR: Pi is undefined. The SDK from sdk.minepi.com did not load.');
+            dbg('FATAL: Pi is undefined');
+            document.getElementById('btn').disabled = false;
             return;
         }
 
+        // Try init with version "2.0"
         try {
-            dbg('Step 7: calling Pi.init()...');
-            try { await Pi.init(); } catch(e) { dbg('Step 7a: init error (ignored): ' + e.message); }
-            dbg('Step 8: calling Pi.authenticate()...');
+            dbg('Calling Pi.init({version:"2.0"})...');
+            await Pi.init({ version: "2.0" });
+            dbg('Pi.init OK!');
+        } catch(e) {
+            dbg('Pi.init error: ' + e.message);
+        }
+
+        // Try authenticate
+        try {
+            dbg('Calling Pi.authenticate()...');
             var auth = await Pi.authenticate({ scopes: ['username'] });
-            setStatus('\u2705 Autenticado: ' + auth.user.username, 'ok');
-        } catch (e) {
-            dbg('ERROR: ' + (e.message || e));
+            setStatus('\u2705 OK: ' + auth.user.username, 'ok');
+        } catch(e) {
+            dbg('Pi.authenticate error: ' + e.message);
             document.getElementById('btn').disabled = false;
         }
     }
+    window.addEventListener('load', function() { doAuth(); });
 </script>
 </body>
 </html>
