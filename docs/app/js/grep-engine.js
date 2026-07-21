@@ -1,11 +1,8 @@
 window.GrepEngine = (function () {
     var _cli = null;
-    var _ready = false;
 
     async function init() {
-        if (_ready) return;
         _cli = await new Aioli(["grep/3.7"]);
-        _ready = true;
     }
 
     async function evaluateAll(pattern, testCases, dialect) {
@@ -15,15 +12,11 @@ window.GrepEngine = (function () {
             });
         }
 
-        if (!_cli) {
-            return testCases.map(function (tc) {
-                return { input: tc[0], expected: tc[1], didMatch: false, passed: !tc[1] };
-            });
-        }
+        var cli = await new Aioli(["grep/3.7"]);
 
         var tmpFile = "/tmp/_rgx_batch.txt";
         var content = testCases.map(function (tc) { return tc[0]; }).join("\n") + "\n";
-        await _cli.fs.writeFile(tmpFile, content);
+        await cli.fs.writeFile(tmpFile, content);
 
         var grepArgs = dialect === "BRE"
             ? ["-n", pattern, tmpFile]
@@ -31,7 +24,7 @@ window.GrepEngine = (function () {
 
         var matchedLines = {};
         try {
-            var result = await _cli.exec("grep", grepArgs);
+            var result = await cli.exec("grep", grepArgs);
             var outLines = result.split("\n");
             for (var i = 0; i < outLines.length; i++) {
                 var m = outLines[i].match(/^(\d+):/);
@@ -39,8 +32,6 @@ window.GrepEngine = (function () {
             }
         } catch (e) {
         }
-
-        try { await _cli.fs.unlink(tmpFile); } catch (_) {}
 
         var results = [];
         for (var i = 0; i < testCases.length; i++) {
