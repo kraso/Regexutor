@@ -12,12 +12,18 @@ window.GrepEngine = (function () {
         if (!pattern) {
             return { match: false, count: 0 };
         }
-        _cli.stdin = input + "\n";
-        var args = dialect === "BRE" ? [pattern] : ["-E", pattern];
+        var tmpFile = "/tmp/_rgx_test.txt";
+        await _cli.fs.writeFile(tmpFile, input + "\n");
+        var args = dialect === "BRE"
+            ? ["-c", pattern, tmpFile]
+            : ["-E", "-c", pattern, tmpFile];
         try {
             var result = await _cli.exec("grep", args);
-            return { match: result.length > 0, count: 1 };
+            var count = parseInt(result.trim()) || 0;
+            await _cli.fs.unlink(tmpFile);
+            return { match: count > 0, count: count };
         } catch (e) {
+            try { await _cli.fs.unlink(tmpFile); } catch (_) {}
             return { match: false, count: 0 };
         }
     }
