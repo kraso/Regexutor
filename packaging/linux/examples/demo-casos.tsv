@@ -1,0 +1,4 @@
+# texto<TAB>esperado (TAB obligatorio; lineas con # se ignoran)
+aaa	true
+bbb	false
+a	false

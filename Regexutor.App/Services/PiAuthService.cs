@@ -66,7 +66,7 @@ public sealed class PiAuthService : IDisposable
         return await _initTcs.Task;
     }
 
-    /// <summary>Call Pi.authenticate({ scopes: ['username'] }) in the browser context.</summary>
+    /// <summary>Call Pi.authenticate(['username']) in the browser context.</summary>
     public async Task<PiAuthResult> AuthenticateAsync(CancellationToken ct = default)
     {
         _authTcs = new TaskCompletionSource<PiAuthResult>();
@@ -197,7 +197,7 @@ public sealed class PiAuthService : IDisposable
             window.__piAuthenticate = async function() {
                 try {
                     await _waitForPi(5000);
-                    var auth = await Pi.authenticate({ scopes: ['username'] });
+                    var auth = await Pi.authenticate(['username']);
                     _post({
                         action     : 'authenticate',
                         success    : true,
