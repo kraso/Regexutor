@@ -262,6 +262,10 @@
         state.pattern = "";
         state.results = null;
         state.summary = "";
+        var info = ExamCatalog.getCycleInfo(state.selectedExamTemplate);
+        if (info) {
+            state.summary = "Examen " + info.current + " de " + info.total;
+        }
         $("repeat-exam-btn").disabled = !state.lastExamSnapshot;
         renderExamContent();
     }

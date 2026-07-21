@@ -1,118 +1,206 @@
 window.ExamCatalog = (function () {
-    var _cycles = {};
+    var _cycleIdx = {};
 
-    function randInt(r, min, max) { return Math.floor(r() * (max - min + 1)) + min; }
-    function randUpper(r, len) {
-        var s = "";
-        for (var i = 0; i < len; i++) s += String.fromCharCode(65 + Math.floor(r() * 26));
-        return s;
-    }
-    function randDigits(r, len) {
-        var s = "";
-        for (var i = 0; i < len; i++) s += String(Math.floor(r() * 10));
-        return s;
-    }
     function shuffle(arr, r) {
-        for (var i = arr.length - 1; i > 0; i--) {
+        var a = arr.slice();
+        for (var i = a.length - 1; i > 0; i--) {
             var j = Math.floor(r() * (i + 1));
-            var tmp = arr[i]; arr[i] = arr[j]; arr[j] = tmp;
+            var tmp = a[i]; a[i] = a[j]; a[j] = tmp;
         }
-        return arr;
-    }
-    function hex6(r) {
-        var h = "0123456789ABCDEF";
-        var s = "#";
-        for (var i = 0; i < 6; i++) s += h[Math.floor(r() * 16)];
-        return s;
+        return a;
     }
 
-    function seededRand(seed) {
-        var x = Math.sin(seed) * 10000;
+    function simpleRand(seed) {
+        var x = Math.sin(seed + 1) * 10000;
         return x - Math.floor(x);
     }
 
-    function buildKeyValue(r) {
-        var kl = randInt(r, 3, 8), vl = randInt(r, 1, 4);
-        var valids = [];
-        for (var i = 0; i < 5; i++) {
-            valids.push([randUpper(r, randInt(r, 3, 8)) + "=" + randDigits(r, randInt(r, 1, 4)), true]);
+    function makeR(seed) {
+        var s = seed;
+        return function () {
+            s = (s * 16807 + 12345) % 2147483647;
+            return (s & 0x7fffffff) / 0x7fffffff;
+        };
+    }
+
+    var templates = [
+        {
+            id: "exam-ere-keyvalue", title: "ERE: KEY=VALUE", shortHelp: "KEY mayúsculas 3-8, VALUE dígitos 1-4.",
+            variants: [
+                function (r) { return buildKV(r, 3, 8, 1, 4); },
+                function (r) { return buildKV(r, 4, 6, 2, 3); },
+                function (r) { return buildKV(r, 3, 5, 1, 2); },
+                function (r) { return buildKV(r, 5, 8, 3, 4); },
+                function (r) { return buildKV(r, 3, 7, 1, 3); },
+                function (r) { return buildKV(r, 4, 8, 2, 4); }
+            ]
+        },
+        {
+            id: "exam-ere-digit-range", title: "ERE: dígitos con longitud", shortHelp: "Solo dígitos, longitud m-n.",
+            variants: [
+                function (r) { return buildDigits(r, 2, 4); },
+                function (r) { return buildDigits(r, 1, 3); },
+                function (r) { return buildDigits(r, 3, 5); },
+                function (r) { return buildDigits(r, 2, 6); },
+                function (r) { return buildDigits(r, 4, 7); },
+                function (r) { return buildDigits(r, 1, 5); }
+            ]
+        },
+        {
+            id: "exam-ere-hex-color", title: "ERE: #RRGGBB", shortHelp: "Hexadecimal mayúsculas.",
+            variants: [
+                function (r) { return buildHex(r, false); },
+                function (r) { return buildHex(r, true); },
+                function (r) { return buildHex(r, false); },
+                function (r) { return buildHex(r, true); },
+                function (r) { return buildHex(r, false); },
+                function (r) { return buildHex(r, true); }
+            ]
+        },
+        {
+            id: "exam-ere-no-digits", title: "ERE: sin dígitos", shortHelp: "Ningún dígito 0-9.",
+            variants: [
+                function (r) { return buildNoDig(r, true); },
+                function (r) { return buildNoDig(r, false); },
+                function (r) { return buildNoDig(r, true); },
+                function (r) { return buildNoDig(r, false); },
+                function (r) { return buildNoDig(r, true); },
+                function (r) { return buildNoDig(r, false); }
+            ]
+        },
+        {
+            id: "exam-ere-alnum", title: "ERE: token alfanumérico", shortHelp: "Una palabra [a-z0-9].",
+            variants: [
+                function (r) { return buildAlnum(r, 1, 5); },
+                function (r) { return buildAlnum(r, 2, 8); },
+                function (r) { return buildAlnum(r, 1, 3); },
+                function (r) { return buildAlnum(r, 3, 7); },
+                function (r) { return buildAlnum(r, 1, 9); },
+                function (r) { return buildAlnum(r, 2, 6); }
+            ]
+        },
+        {
+            id: "exam-bre-literal", title: "BRE: literal fijo", shortHelp: "Palabra clave exacta.",
+            variants: [
+                function (r) { return buildBRE(r, "TODO"); },
+                function (r) { return buildBRE(r, "FIXME"); },
+                function (r) { return buildBRE(r, "NULL"); },
+                function (r) { return buildBRE(r, "WARN"); },
+                function (r) { return buildBRE(r, "BUG"); },
+                function (r) { return buildBRE(r, "HACK"); }
+            ]
+        },
+        {
+            id: "exam-ere-date", title: "ERE: fecha AAAA-MM-DD", shortHelp: "Formato ISO.",
+            variants: [
+                function (r) { return buildDate(r, 2024, 2026); },
+                function (r) { return buildDate(r, 2020, 2023); },
+                function (r) { return buildDate(r, 2027, 2030); },
+                function (r) { return buildDate(r, 2000, 2010); },
+                function (r) { return buildDate(r, 2015, 2020); },
+                function (r) { return buildDate(r, 2030, 2040); }
+            ]
         }
+    ];
+
+    function buildKV(r, kMin, kMax, vMin, vMax) {
+        function K() {
+            var len = Math.floor(r() * (kMax - kMin + 1)) + kMin;
+            var s = "";
+            for (var i = 0; i < len; i++) s += String.fromCharCode(65 + Math.floor(r() * 26));
+            return s;
+        }
+        function V() {
+            var len = Math.floor(r() * (vMax - vMin + 1)) + vMin;
+            var s = "";
+            for (var i = 0; i < len; i++) s += String(Math.floor(r() * 10));
+            return s;
+        }
+        var valids = [];
+        for (var i = 0; i < 5; i++) valids.push([K() + "=" + V(), true]);
         var invalids = [
-            [randUpper(r, 2) + "=" + randDigits(r, 1), false],
-            [randUpper(r, 9) + "=" + randDigits(r, 1), false],
-            [randUpper(r, 4).toLowerCase() + "=" + randDigits(r, 2), false],
-            [randUpper(r, 4) + "=", false],
-            [randUpper(r, 4) + "=" + randDigits(r, 5), false],
-            [randUpper(r, 4) + "=" + randDigits(r, 2) + " ", false],
-            [" " + randUpper(r, 4) + "=" + randDigits(r, 2), false],
-            [randUpper(r, 4) + "= " + randDigits(r, 2), false],
+            [K().slice(0, 2) + "=" + V(), false],
+            [K() + K().slice(0, 3) + "=" + V(), false],
+            [K().toLowerCase() + "=" + V(), false],
+            [K() + "=", false],
+            [K() + "=" + V() + V() + V(), false],
+            [K() + "=" + V() + " ", false],
+            [" " + K() + "=" + V(), false],
         ];
         return {
             id: "exam-gen-kv-" + Date.now(),
             title: "EXAMEN ERE · KEY=VALUE",
-            prompt: "Examen (ERE). La línea completa debe cumplir:\n- KEY: exactamente entre 3 y 8 letras MAYÚSCULAS (A-Z)\n- '=' literal\n- VALUE: entre 1 y 4 dígitos (0-9)\nSin espacios ni caracteres extra.",
+            prompt: "Examen (ERE). La línea completa debe cumplir:\n- KEY: entre " + kMin + " y " + kMax + " letras MAYÚSCULAS (A-Z)\n- '=' literal\n- VALUE: entre " + vMin + " y " + vMax + " dígitos (0-9)\nSin espacios ni caracteres extra.",
             dialect: "ERE",
             tests: shuffle(valids.concat(invalids), r)
         };
     }
 
-    function buildDigitRange(r) {
-        var m = randInt(r, 1, 3);
-        var n = randInt(r, m + 1, m + 4);
+    function buildDigits(r, m, n) {
         function D(len) {
             var s = "";
-            for (var i = 0; i < len; i++) s += String(randInt(r, i === len - 1 ? 1 : 0, 9));
+            for (var i = 0; i < len; i++) s += String(Math.floor(r() * (i === len - 1 ? 9 : 10)));
             return s;
         }
         var cases = [
             [D(m), true], [D(n), true],
-            [m < n ? D(Math.floor((m + n) / 2)) : D(m), true],
+            [D(Math.floor((m + n) / 2)), true],
             [m > 1 ? D(m - 1) : "a", false],
-            [D(n + 1 + randInt(r, 0, 2)), false],
+            [D(n + 1 + Math.floor(r() * 2)), false],
             ["", false], [D(n) + " ", false], [" " + D(m), false],
             [D(m) + "x", false], ["x" + D(m), false]
         ];
         return {
             id: "exam-gen-digits-" + Date.now(),
             title: "EXAMEN ERE · rango de dígitos",
-            prompt: "Examen (ERE). Match SOLO si toda la línea es solo dígitos (0-9) y su longitud está entre " + m + " y " + n + " caracteres.",
+            prompt: "Examen (ERE). Match SOLO si toda la línea es solo dígitos (0-9) de entre " + m + " y " + n + " caracteres.",
             dialect: "ERE",
             tests: shuffle(cases, r)
         };
     }
 
-    function buildHexColor(r) {
+    function buildHex(r, lower) {
+        function hex() {
+            var h = lower ? "0123456789abcdef" : "0123456789ABCDEF";
+            var s = "#";
+            for (var i = 0; i < 6; i++) s += h[Math.floor(r() * 16)];
+            return s;
+        }
+        function rnd(len) {
+            var h = lower ? "0123456789abcdef" : "0123456789ABCDEF";
+            var s = "#";
+            for (var i = 0; i < len; i++) s += h[Math.floor(r() * 16)];
+            return s;
+        }
         var cases = [
-            [hex6(r), true], [hex6(r), true],
-            ["#" + randDigits(r, 4), false],
-            ["#" + randUpper(r, 5), false],
-            ["#" + randUpper(r, 7), false],
-            ["#abcdef", false],
-            ["#GGGGGG", false], ["", false]
+            [hex(), true], [hex(), true], [hex(), true],
+            [rnd(4), false], [rnd(5), false], [rnd(7), false],
+            ["#abcdef", false], ["#GGGGGG", false], ["", false]
         ];
         return {
             id: "exam-gen-hex-" + Date.now(),
             title: "EXAMEN ERE · #RRGGBB",
-            prompt: "Examen (ERE). Match SOLO si toda la línea es '#' seguido de exactamente 6 caracteres hex en [0-9A-F] (mayúsculas).",
+            prompt: "Examen (ERE). Match SOLO si toda la línea es '#' seguido de exactamente 6 caracteres hex en [" + (lower ? "0-9a-f" : "0-9A-F") + "] (" + (lower ? "minúsculas" : "mayúsculas") + ").",
             dialect: "ERE",
             tests: shuffle(cases, r)
         };
     }
 
-    function buildNoDigits(r) {
-        function AlphaLine(len) {
-            var ch = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_-\t ";
+    function buildNoDig(r, withTabs) {
+        var ch = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_-";
+        if (withTabs) ch += "\t ";
+        function line(len) {
             var s = "";
             for (var i = 0; i < len; i++) s += ch[Math.floor(r() * ch.length)];
             return s;
         }
         var cases = [
-            [AlphaLine(randInt(r, 3, 12)), true],
-            [AlphaLine(randInt(r, 1, 20)), true],
+            [line(Math.floor(r() * 10) + 3), true],
+            [line(Math.floor(r() * 15) + 1), true],
             ["", true], ["___", true],
-            [AlphaLine(4) + randDigits(r, 1), false],
-            [randDigits(r, 3), false],
-            ["id=" + randDigits(r, 2), false],
+            [line(4) + String(Math.floor(r() * 10)), false],
+            [String(Math.floor(r() * 900) + 100), false],
+            ["id=" + String(Math.floor(r() * 90) + 10), false],
         ];
         return {
             id: "exam-gen-nodig-" + Date.now(),
@@ -123,30 +211,34 @@ window.ExamCatalog = (function () {
         };
     }
 
-    function buildAlnumToken(r) {
-        function Good() {
-            var len = randInt(r, 1, 9);
-            var s = String.fromCharCode(97 + randInt(r, 0, 25));
-            for (var i = 1; i < len; i++) s += r() > 0.5 ? String(randInt(r, 0, 9)) : String.fromCharCode(97 + randInt(r, 0, 25));
+    function buildAlnum(r, minLen, maxLen) {
+        function good() {
+            var len = Math.floor(r() * (maxLen - minLen + 1)) + minLen;
+            var s = String.fromCharCode(97 + Math.floor(r() * 26));
+            for (var i = 1; i < len; i++) s += r() > 0.5 ? String(Math.floor(r() * 10)) : String.fromCharCode(97 + Math.floor(r() * 26));
+            return s;
+        }
+        function rndDigits() {
+            var s = "";
+            var len = Math.floor(r() * 4) + 2;
+            for (var i = 0; i < len; i++) s += String(Math.floor(r() * 10));
             return s;
         }
         var cases = [
-            [Good(), true], [Good(), true], ["A", true], ["Z9", true],
-            [randDigits(r, randInt(r, 2, 5)), false],
+            [good(), true], [good(), true], ["a", true], ["z9", true],
+            [rndDigits(), false],
             ["9abc", false], ["a-b", false], ["a b", false], ["", false]
         ];
         return {
             id: "exam-gen-alnum-" + Date.now(),
             title: "EXAMEN ERE · token alfanumérico",
-            prompt: "Examen (ERE). Match SOLO si toda la línea es UN solo token alfanumérico: al menos una letra, resto letras o dígitos, sin espacios.",
+            prompt: "Examen (ERE). Match SOLO si toda la línea es UN solo token alfanumérico minúsculo: entre " + minLen + " y " + maxLen + " caracteres, sin espacios ni guiones.",
             dialect: "ERE",
             tests: shuffle(cases, r)
         };
     }
 
-    function buildBreLiteral(r) {
-        var words = ["TODO", "FIXME", "NULL", "WARN", "BUG", "HACK"];
-        var word = words[randInt(r, 0, words.length - 1)];
+    function buildBRE(r, word) {
         var cases = [
             ["Revisar " + word + " antes de merge", true],
             ["// " + word + ": explicación", true],
@@ -157,17 +249,17 @@ window.ExamCatalog = (function () {
         ];
         return {
             id: "exam-gen-bre-lit-" + Date.now(),
-            title: "EXAMEN BRE · literal",
+            title: "EXAMEN BRE · literal '" + word + "'",
             prompt: "Examen (BRE). Haz match en líneas que contengan literalmente '" + word + "' (mayúsculas exactas).",
             dialect: "BRE",
             tests: shuffle(cases, r)
         };
     }
 
-    function buildIsoDate(r) {
-        var y = 2000 + randInt(r, 0, 99);
-        var mo = randInt(r, 1, 12);
-        var d = randInt(r, 1, 31);
+    function buildDate(r, yMin, yMax) {
+        var y = yMin + Math.floor(r() * (yMax - yMin + 1));
+        var mo = Math.floor(r() * 12) + 1;
+        var d = Math.floor(r() * 28) + 1;
         var pad = function(n) { return n < 10 ? "0" + n : "" + n; };
         var cases = [
             [y + "-" + pad(mo) + "-" + pad(d), true],
@@ -180,41 +272,30 @@ window.ExamCatalog = (function () {
         return {
             id: "exam-gen-date-" + Date.now(),
             title: "EXAMEN ERE · fecha AAAA-MM-DD",
-            prompt: "Examen (ERE). Match SOLO si la línea tiene forma AAAA-MM-DD (AAAA 2000-2099, MM 01-12, DD 01-31).",
+            prompt: "Examen (ERE). Match SOLO si la línea tiene forma AAAA-MM-DD (AAAA " + yMin + "-" + yMax + ", MM 01-12, DD 01-31).",
             dialect: "ERE",
             tests: shuffle(cases, r)
         };
     }
 
-    var templates = [
-        { id: "exam-ere-keyvalue", title: "ERE: KEY=VALUE", shortHelp: "Reglas fijas; entradas aleatorias.", build: buildKeyValue },
-        { id: "exam-ere-digit-range", title: "ERE: dígitos con longitud", shortHelp: "Los límites m y n cambian.", build: buildDigitRange },
-        { id: "exam-ere-hex-color", title: "ERE: #RRGGBB", shortHelp: "Hex en mayúsculas.", build: buildHexColor },
-        { id: "exam-ere-no-digits", title: "ERE: sin dígitos", shortHelp: "Toda la línea sin [0-9].", build: buildNoDigits },
-        { id: "exam-ere-alnum", title: "ERE: token alfanumérico", shortHelp: "Una palabra alfanumérica.", build: buildAlnumToken },
-        { id: "exam-bre-literal", title: "BRE: literal fijo", shortHelp: "Palabra aleatoria.", build: buildBreLiteral },
-        { id: "exam-ere-date", title: "ERE: fecha AAAA-MM-DD", shortHelp: "Sin calendario real.", build: buildIsoDate },
-    ];
-
     function getTemplates() { return templates; }
+
     function buildExam(templateId) {
-        var t = templates.find(function(x) { return x.id === templateId; });
+        var t = templates.find(function (x) { return x.id === templateId; });
+        if (!t || !t.variants || t.variants.length === 0) return null;
+        if (_cycleIdx[templateId] === undefined) _cycleIdx[templateId] = 0;
+        var idx = _cycleIdx[templateId] % t.variants.length;
+        _cycleIdx[templateId]++;
+        var r = makeR(idx * 1000 + t.variants.length * 7);
+        return t.variants[idx](r);
+    }
+
+    function getCycleInfo(templateId) {
+        var t = templates.find(function (x) { return x.id === templateId; });
         if (!t) return null;
-        if (!_cycles[templateId]) _cycles[templateId] = 0;
-        var seed = _cycles[templateId];
-        _cycles[templateId]++;
-        var r = function() { return seededRand(seed * 9301 + 49297); };
-        var r2 = function() { return seededRand(seed * 7919 + 12347); };
-        return t.build(function() {
-            seed = (seed * 16807 + 0) % 2147483647;
-            return (seed & 0x7fffffff) / 0x7fffffff;
-        });
+        var idx = (_cycleIdx[templateId] || 0) % t.variants.length;
+        return { current: idx + 1, total: t.variants.length };
     }
 
-    function resetCycles(templateId) {
-        if (templateId) _cycles[templateId] = 0;
-        else _cycles = {};
-    }
-
-    return { getTemplates: getTemplates, buildExam: buildExam, resetCycles: resetCycles };
+    return { getTemplates: getTemplates, buildExam: buildExam, getCycleInfo: getCycleInfo };
 })();
