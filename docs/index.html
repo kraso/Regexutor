@@ -69,21 +69,16 @@
         statusEl.className = cls;
     }
 
-    function waitForPi(timeoutMs) {
-        return new Promise(function(resolve, reject) {
-            if (typeof Pi !== 'undefined') { resolve(); return; }
-            var t = Date.now();
-            var iv = setInterval(function() {
-                if (typeof Pi !== 'undefined') { clearInterval(iv); resolve(); }
-                else if (Date.now() - t > (timeoutMs || 15000)) { clearInterval(iv); reject(new Error('Pi SDK no se carg\u00f3')); }
-            }, 100);
-        });
-    }
-
     async function doAuth() {
         btnEl.disabled = true;
         try {
-            await waitForPi(15000);
+            if (typeof Pi === 'undefined') {
+                setStatus('\u274c Pi SDK no disponible.', 'err');
+                btnEl.disabled = false;
+                return;
+            }
+            setStatus('Inicializando Pi\u2026', 'wait');
+            try { await Pi.init(); } catch(e) { /* ignore */ }
             setStatus('Autenticando con Pi\u2026', 'wait');
             var auth = await Pi.authenticate({ scopes: ['username'] });
             setStatus('\u2705 Autenticado como: ' + auth.user.username, 'ok');
