@@ -5,8 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
     <title>Regexutor — Pi Network</title>
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
-    <meta http-equiv="Pragma" content="no-cache"/>
-    <meta http-equiv="Expires" content="0"/>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -29,22 +27,18 @@
         }
         h1 { font-size: 22px; margin-bottom: 8px; }
         .subtitle { color: #aaa; font-size: 14px; margin-bottom: 24px; }
-        #log {
+        #status {
             padding: 16px;
             border-radius: 10px;
             margin-bottom: 20px;
-            font-size: 12px;
-            line-height: 1.8;
+            font-size: 14px;
+            line-height: 1.6;
             background: rgba(255,255,255,0.05);
-            text-align: left;
-            white-space: pre-wrap;
-            word-break: break-all;
-            max-height: 400px;
-            overflow-y: auto;
+            min-height: 48px;
         }
-        #log.ok   { border: 1px solid #4caf50; color: #81c784; }
-        #log.err  { border: 1px solid #f44336; color: #e57373; }
-        #log.wait { border: 1px solid #ff9800; color: #ffb74d; }
+        #status.ok   { border: 1px solid #4caf50; color: #81c784; }
+        #status.err  { border: 1px solid #f44336; color: #e57373; }
+        #status.wait { border: 1px solid #ff9800; color: #ffb74d; }
         button {
             background: #7c4dff;
             color: #fff;
@@ -63,47 +57,41 @@
 <div class="card">
     <h1>Regexutor &copy;</h1>
     <p class="subtitle">Herramienta educativa de expresiones regulares</p>
-    <div id="log" class="wait">Cargando&hellip;</div>
+    <div id="status" class="wait">Iniciando&hellip;</div>
     <button id="btn" onclick="doAuth()">Iniciar sesi&oacute;n con Pi</button>
 </div>
 
+<script src="https://sdk.minepi.com/pi-sdk.js"></script>
 <script>
-var _L = [];
-function dbg(m) { _L.push(m); document.getElementById('log').textContent = _L.join('\n'); }
-dbg('v4 - ' + Date.now());
-dbg('Loading Pi SDK...');
-</script>
-<script src="https://sdk.minepi.com/pi-sdk.js?v=v4hash998"></script>
-<script>
-dbg('SDK loaded. typeof Pi = ' + typeof Pi);
-</script>
-<script>
-async function doAuth() {
-    document.getElementById('btn').disabled = true;
-    dbg('\n--- Pi.init({version:"2.0"}) ---');
-    try {
-        await Pi.init({version: '2.0'});
-        dbg('init OK!');
-    } catch(e) {
-        dbg('init FAIL: ' + e.message);
-        document.getElementById('btn').disabled = false;
-        return;
-    }
+    var statusEl = document.getElementById('status');
+    var btn = document.getElementById('btn');
 
-    dbg('\n--- Pi.authenticate(["username"]) ---');
-    try {
-        var auth = await Pi.authenticate(['username']);
-        document.getElementById('log').className = 'ok';
-        dbg('AUTH SUCCESS!');
-        dbg('Username: ' + auth.user.username);
-        dbg('Token: ' + auth.accessToken.substring(0, 20) + '...');
-    } catch(e) {
-        document.getElementById('log').className = 'err';
-        dbg('authenticate FAIL: ' + e.message);
-        dbg('Stack: ' + (e.stack || 'none').substring(0, 300));
+    async function doAuth() {
+        btn.disabled = true;
+        statusEl.className = 'wait';
+        statusEl.textContent = 'Conectando con Pi Network\u2026';
+
+        try {
+            await Pi.init({version: '2.0'});
+        } catch(e) {
+            statusEl.className = 'err';
+            statusEl.textContent = 'Error al inicializar Pi SDK: ' + e.message;
+            btn.disabled = false;
+            return;
+        }
+
+        try {
+            var auth = await Pi.authenticate(['username']);
+            statusEl.className = 'ok';
+            statusEl.textContent = 'Sesión iniciada como ' + auth.user.username;
+            window.piAuth = auth;
+        } catch(e) {
+            statusEl.className = 'err';
+            statusEl.textContent = 'Error de autenticación: ' + e.message;
+        }
+
+        btn.disabled = false;
     }
-    document.getElementById('btn').disabled = false;
-}
 </script>
 </body>
 </html>
