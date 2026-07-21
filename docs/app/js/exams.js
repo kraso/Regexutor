@@ -1,4 +1,6 @@
 window.ExamCatalog = (function () {
+    var _cycles = {};
+
     function randInt(r, min, max) { return Math.floor(r() * (max - min + 1)) + min; }
     function randUpper(r, len) {
         var s = "";
@@ -24,11 +26,16 @@ window.ExamCatalog = (function () {
         return s;
     }
 
+    function seededRand(seed) {
+        var x = Math.sin(seed) * 10000;
+        return x - Math.floor(x);
+    }
+
     function buildKeyValue(r) {
+        var kl = randInt(r, 3, 8), vl = randInt(r, 1, 4);
         var valids = [];
         for (var i = 0; i < 5; i++) {
-            var kl = randInt(r, 3, 8), vl = randInt(r, 1, 4);
-            valids.push([randUpper(r, kl) + "=" + randDigits(r, vl), true]);
+            valids.push([randUpper(r, randInt(r, 3, 8)) + "=" + randDigits(r, randInt(r, 1, 4)), true]);
         }
         var invalids = [
             [randUpper(r, 2) + "=" + randDigits(r, 1), false],
@@ -193,8 +200,21 @@ window.ExamCatalog = (function () {
     function buildExam(templateId) {
         var t = templates.find(function(x) { return x.id === templateId; });
         if (!t) return null;
-        return t.build(Math.random);
+        if (!_cycles[templateId]) _cycles[templateId] = 0;
+        var seed = _cycles[templateId];
+        _cycles[templateId]++;
+        var r = function() { return seededRand(seed * 9301 + 49297); };
+        var r2 = function() { return seededRand(seed * 7919 + 12347); };
+        return t.build(function() {
+            seed = (seed * 16807 + 0) % 2147483647;
+            return (seed & 0x7fffffff) / 0x7fffffff;
+        });
     }
 
-    return { getTemplates: getTemplates, buildExam: buildExam };
+    function resetCycles(templateId) {
+        if (templateId) _cycles[templateId] = 0;
+        else _cycles = {};
+    }
+
+    return { getTemplates: getTemplates, buildExam: buildExam, resetCycles: resetCycles };
 })();
