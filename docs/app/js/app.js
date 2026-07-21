@@ -273,34 +273,52 @@
         $("about-version").textContent = "1.2.0";
     }
 
+    function setLoggedIn(username) {
+        $("pi-login-btn").style.display = "none";
+        $("pi-user-badge").style.display = "";
+        $("pi-username").textContent = username;
+    }
+
     async function initPiLogin() {
         if (!PiAuth.isAvailable()) {
             $("pi-login-btn").disabled = true;
             $("pi-login-btn").textContent = "Pi no disponible";
             return;
         }
+        $("pi-login-btn").disabled = true;
+        $("pi-login-btn").textContent = "Conectando…";
         try {
             var user = await PiAuth.login();
             state.piUser = user;
-            $("pi-login-btn").style.display = "none";
-            $("pi-user-badge").style.display = "";
-            $("pi-username").textContent = user.username;
+            setLoggedIn(user.username);
         } catch (e) {
             $("pi-login-btn").disabled = false;
-            $("pi-login-btn").textContent = "Error: " + e.message;
+            $("pi-login-btn").textContent = "Iniciar sesión con Pi";
         }
     }
 
     async function boot() {
         $("eval-btn").onclick = evaluate;
         $("exam-eval-btn").onclick = evaluateExam;
-        $("pi-login-btn").onclick = initPiLogin;
-
         renderPractice();
         renderTheory();
         renderExams();
         renderAbout();
         show("practice");
+
+        if (PiAuth.isAvailable()) {
+            $("pi-login-btn").onclick = initPiLogin;
+            try {
+                var user = await PiAuth.login();
+                state.piUser = user;
+                setLoggedIn(user.username);
+            } catch (e) {
+                $("pi-login-btn").onclick = initPiLogin;
+            }
+        } else {
+            $("pi-login-btn").textContent = "Pi no disponible";
+            $("pi-login-btn").disabled = true;
+        }
 
         $("loading-status").style.display = "";
         $("loading-status").textContent = "Cargando motor grep (WASM)…";
