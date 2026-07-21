@@ -33,6 +33,9 @@
             font-size: 14px;
             line-height: 1.6;
             background: rgba(255,255,255,0.05);
+            text-align: left;
+            white-space: pre-wrap;
+            word-break: break-all;
         }
         #status.ok   { border: 1px solid #4caf50; color: #81c784; }
         #status.err  { border: 1px solid #f44336; color: #e57373; }
@@ -55,42 +58,55 @@
 <div class="card">
     <h1>Regexutor &copy;</h1>
     <p class="subtitle">Herramienta educativa de expresiones regulares</p>
-    <div id="status" class="wait">Preparando autenticaci&oacute;n con Pi Network&hellip;</div>
+    <div id="status" class="wait">Cargando&hellip;</div>
     <button id="btn" onclick="doAuth()">Iniciar sesi&oacute;n con Pi</button>
 </div>
 
+<script>
+    var log = [];
+    function setStatus(text, cls) {
+        document.getElementById('status').textContent = text;
+        document.getElementById('status').className = cls;
+    }
+    function dbg(msg) { log.push(msg); setStatus(log.join('\n'), 'wait'); }
+    dbg('Step 1: page loaded, Pi type=' + typeof Pi);
+</script>
+<script>
+    dbg('Step 2: Pi type after inline script=' + typeof Pi);
+    window.addEventListener('load', function() {
+        dbg('Step 3: window.load fired, Pi type=' + typeof Pi);
+        setTimeout(function() {
+            dbg('Step 4: after 2s delay, Pi type=' + typeof Pi +
+                ', hasInit=' + (typeof Pi !== 'undefined' ? typeof Pi.init : 'N/A') +
+                ', hasAuth=' + (typeof Pi !== 'undefined' ? typeof Pi.authenticate : 'N/A'));
+        }, 2000);
+    });
+</script>
 <script src="https://sdk.minepi.com/pi-sdk.js"></script>
 <script>
-    var statusEl = document.getElementById('status');
-    var btnEl    = document.getElementById('btn');
-
-    function setStatus(text, cls) {
-        statusEl.textContent = text;
-        statusEl.className = cls;
-    }
-
+    dbg('Step 5: after SDK script tag, Pi type=' + typeof Pi);
+</script>
+<script>
     async function doAuth() {
-        btnEl.disabled = true;
+        document.getElementById('btn').disabled = true;
+        dbg('Step 6: doAuth called, Pi type=' + typeof Pi);
+
+        if (typeof Pi === 'undefined') {
+            dbg('ERROR: Pi is undefined. The SDK from sdk.minepi.com did not load.');
+            return;
+        }
+
         try {
-            if (typeof Pi === 'undefined') {
-                setStatus('\u274c Pi SDK no disponible.', 'err');
-                btnEl.disabled = false;
-                return;
-            }
-            setStatus('Inicializando Pi\u2026', 'wait');
-            try { await Pi.init(); } catch(e) { /* ignore */ }
-            setStatus('Autenticando con Pi\u2026', 'wait');
+            dbg('Step 7: calling Pi.init()...');
+            try { await Pi.init(); } catch(e) { dbg('Step 7a: init error (ignored): ' + e.message); }
+            dbg('Step 8: calling Pi.authenticate()...');
             var auth = await Pi.authenticate({ scopes: ['username'] });
-            setStatus('\u2705 Autenticado como: ' + auth.user.username, 'ok');
+            setStatus('\u2705 Autenticado: ' + auth.user.username, 'ok');
         } catch (e) {
-            setStatus('\u274c Error: ' + (e.message || e), 'err');
-            btnEl.disabled = false;
+            dbg('ERROR: ' + (e.message || e));
+            document.getElementById('btn').disabled = false;
         }
     }
-
-    window.addEventListener('load', function() {
-        doAuth();
-    });
 </script>
 </body>
 </html>
