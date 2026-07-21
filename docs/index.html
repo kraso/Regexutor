@@ -4,6 +4,9 @@
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
     <title>Regexutor — Pi Network</title>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
+    <meta http-equiv="Pragma" content="no-cache"/>
+    <meta http-equiv="Expires" content="0"/>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -26,12 +29,12 @@
         }
         h1 { font-size: 22px; margin-bottom: 8px; }
         .subtitle { color: #aaa; font-size: 14px; margin-bottom: 24px; }
-        #status {
+        #log {
             padding: 16px;
             border-radius: 10px;
             margin-bottom: 20px;
-            font-size: 12px;
-            line-height: 1.8;
+            font-size: 11px;
+            line-height: 1.6;
             background: rgba(255,255,255,0.05);
             text-align: left;
             white-space: pre-wrap;
@@ -39,9 +42,9 @@
             max-height: 400px;
             overflow-y: auto;
         }
-        #status.ok   { border: 1px solid #4caf50; color: #81c784; }
-        #status.err  { border: 1px solid #f44336; color: #e57373; }
-        #status.wait { border: 1px solid #ff9800; color: #ffb74d; }
+        #log.ok   { border: 1px solid #4caf50; color: #81c784; }
+        #log.err  { border: 1px solid #f44336; color: #e57373; }
+        #log.wait { border: 1px solid #ff9800; color: #ffb74d; }
         button {
             background: #7c4dff;
             color: #fff;
@@ -60,79 +63,104 @@
 <div class="card">
     <h1>Regexutor &copy;</h1>
     <p class="subtitle">Herramienta educativa de expresiones regulares</p>
-    <div id="status" class="wait">Cargando&hellip;</div>
+    <div id="log" class="wait">Cargando&hellip;</div>
     <button id="btn" onclick="doAuth()">Iniciar sesi&oacute;n con Pi</button>
 </div>
 
 <script>
-    var _lines = [];
-    function dbg(msg) {
-        _lines.push(msg);
-        document.getElementById('status').textContent = _lines.join('\n');
-        document.getElementById('status').scrollTop = 9999;
-    }
-
-    dbg('1. Page loaded. typeof Pi = ' + typeof Pi);
-    dbg('2. window.chrome exists = ' + (!!window.chrome));
-    dbg('3. window.chrome.webview exists = ' + (!!(window.chrome && window.chrome.webview)));
+var _L = [];
+function dbg(m) { _L.push(m); var el = document.getElementById('log'); if(el) el.textContent = _L.join('\n'); }
+dbg('T=' + Date.now());
+dbg('Pi before任何script = ' + typeof window.Pi);
+dbg('chrome.webview = ' + !!(window.chrome && window.chrome.webview));
 </script>
-<script src="https://sdk.minepi.com/pi-sdk.js?v=dbg1"></script>
+<!-- NO CARGAMOS EL SDK — probamos si Pi Desktop inyecta su propio bridge -->
 <script>
-    dbg('4. After SDK script. typeof Pi = ' + typeof Pi);
-    if (typeof Pi !== 'undefined') {
-        dbg('   Pi.init = ' + typeof Pi.init);
-        dbg('   Pi.authenticate = ' + typeof Pi.authenticate);
-        dbg('   Pi keys = ' + Object.keys(Pi).join(', '));
-    }
+dbg('After no-SDK. typeof Pi = ' + typeof window.Pi);
+if (typeof Pi !== 'undefined') {
+    dbg('Pi keys = ' + Object.keys(Pi).join(', '));
+    dbg('Pi.init = ' + typeof Pi.init);
+    dbg('Pi.authenticate = ' + typeof Pi.authenticate);
+}
 </script>
 <script>
-    async function doAuth() {
-        document.getElementById('btn').disabled = true;
+async function doAuth() {
+    document.getElementById('btn').disabled = true;
+    dbg('\n=== doAuth ===');
+    dbg('typeof Pi = ' + typeof window.Pi);
 
-        dbg('\n--- doAuth start ---');
-        dbg('typeof Pi = ' + typeof Pi);
-
+    if (typeof Pi === 'undefined') {
+        dbg('Pi not defined. Trying to wait 2s...');
+        await new Promise(r => setTimeout(r, 2000));
+        dbg('After wait, typeof Pi = ' + typeof window.Pi);
         if (typeof Pi === 'undefined') {
-            dbg('FATAL: Pi not defined');
-            document.getElementById('btn').disabled = false;
-            return;
+            dbg('STILL no Pi. Loading SDK now...');
+            await loadSdk();
         }
-
-        // Capture Pi state BEFORE init
-        var initStr = Pi.init.toString().substring(0, 200);
-        dbg('Pi.init source: ' + initStr);
-
-        // Try each init signature and collect results
-        var tries = [
-            ['Pi.init()',                          function(){ return Pi.init(); }],
-            ['Pi.init("2.0")',                     function(){ return Pi.init("2.0"); }],
-            ['Pi.init({version:"2.0"})',           function(){ return Pi.init({version:"2.0"}); }],
-            ['Pi.init({version:"3.0"})',           function(){ return Pi.init({version:"3.0"}); }],
-            ['Pi.init({})',                        function(){ return Pi.init({}); }],
-            ['Pi.init(null)',                      function(){ return Pi.init(null); }],
-        ];
-
-        for (var i = 0; i < tries.length; i++) {
-            try {
-                await tries[i][1]();
-                dbg(tries[i][0] + ' => OK!');
-            } catch(e) {
-                dbg(tries[i][0] + ' => FAIL: ' + e.message);
-            }
-        }
-
-        // Now try authenticate
-        dbg('\n--- authenticate ---');
-        try {
-            var auth = await Pi.authenticate({ scopes: ['username'] });
-            document.getElementById('status').className = 'ok';
-            dbg('SUCCESS: ' + auth.user.username);
-        } catch(e) {
-            dbg('authenticate FAIL: ' + e.message);
-        }
-
-        document.getElementById('btn').disabled = false;
     }
+
+    if (typeof Pi === 'undefined') {
+        dbg('FATAL: No Pi available');
+        document.getElementById('btn').disabled = false;
+        return;
+    }
+
+    dbg('Pi.init type = ' + typeof Pi.init);
+    dbg('Pi.init src = ' + Pi.init.toString().substring(0, 300));
+
+    // Try init variants
+    var tries = [
+        ['Pi.init()',                     function(){ return Pi.init(); }],
+        ['Pi.init("2.0")',               function(){ return Pi.init("2.0"); }],
+        ['Pi.init("3.0")',               function(){ return Pi.init("3.0"); }],
+        ['Pi.init({version:"2.0"})',     function(){ return Pi.init({version:"2.0"}); }],
+        ['Pi.init({version:"3.0"})',     function(){ return Pi.init({version:"3.0"}); }],
+        ['Pi.init({})',                   function(){ return Pi.init({}); }],
+        ['Pi.init(null)',                 function(){ return Pi.init(null); }],
+    ];
+
+    var initOk = false;
+    for (var i = 0; i < tries.length; i++) {
+        try {
+            await tries[i][1]();
+            dbg(tries[i][0] + ' => OK!');
+            initOk = true;
+            break;
+        } catch(e) {
+            dbg(tries[i][0] + ' => ' + e.message);
+        }
+    }
+
+    if (!initOk) {
+        dbg('\nAll init failed. Trying authenticate anyway...');
+    }
+
+    try {
+        var auth = await Pi.authenticate({ scopes: ['username'] });
+        document.getElementById('log').className = 'ok';
+        dbg('AUTH OK: ' + auth.user.username);
+    } catch(e) {
+        dbg('authenticate => ' + e.message);
+    }
+
+    document.getElementById('btn').disabled = false;
+}
+
+function loadSdk() {
+    return new Promise(function(resolve) {
+        var s = document.createElement('script');
+        s.src = 'https://sdk.minepi.com/pi-sdk.js?t=' + Date.now();
+        s.onload = function() {
+            dbg('SDK loaded. Pi = ' + typeof window.Pi);
+            resolve();
+        };
+        s.onerror = function() {
+            dbg('SDK load FAILED');
+            resolve();
+        };
+        document.head.appendChild(s);
+    });
+}
 </script>
 </body>
 </html>
