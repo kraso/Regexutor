@@ -322,6 +322,16 @@
             $("loading-status").textContent = "Error grep: " + e.message;
             $("loading-status").style.display = "";
         }
+
+        if (!saved && PiAuth.isAvailable()) {
+            try {
+                var user = await PiAuth.login();
+                state.piUser = user;
+                setLoggedIn(user.username);
+            } catch (e) {
+                /* keep button visible for manual login */
+            }
+        }
     }
 
     if (document.readyState === "loading") {

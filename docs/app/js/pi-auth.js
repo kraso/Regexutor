@@ -28,10 +28,17 @@ window.PiAuth = (function () {
         if (!isAvailable()) {
             throw new Error("Pi Network no disponible.");
         }
-        await Pi.init({ version: "2.0" });
-        var auth = await Pi.authenticate(["username"]);
-        _saveUser(auth.user);
-        return auth.user;
+        var result = await Promise.race([
+            (async function() {
+                await Pi.init({ version: "2.0" });
+                return await Pi.authenticate(["username"]);
+            })(),
+            new Promise(function(_, reject) {
+                setTimeout(function() { reject(new Error("timeout")); }, 8000);
+            })
+        ]);
+        _saveUser(result.user);
+        return result.user;
     }
 
     function getUser() { return _user; }
