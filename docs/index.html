@@ -59,39 +59,28 @@
     <button id="btn" onclick="doAuth()">Iniciar sesi&oacute;n con Pi</button>
 </div>
 
-<script src="https://sdk.minepi.com/pi-sdk.js"></script>
 <script>
     var statusEl = document.getElementById('status');
     var btnEl    = document.getElementById('btn');
-    var piReady  = false;
 
     function setStatus(text, cls) {
         statusEl.textContent = text;
         statusEl.className = cls;
     }
 
-    function waitForPi(timeoutMs) {
-        return new Promise(function(resolve, reject) {
-            if (typeof Pi !== 'undefined') { resolve(); return; }
-            var t = Date.now();
-            var iv = setInterval(function() {
-                if (typeof Pi !== 'undefined') { clearInterval(iv); resolve(); }
-                else if (Date.now() - t > (timeoutMs || 15000)) { clearInterval(iv); reject(new Error('Pi SDK no se carg\u00f3')); }
-            }, 100);
-        });
-    }
-
     async function doAuth() {
         btnEl.disabled = true;
         try {
-            await waitForPi(15000);
-            setStatus('Inicializando Pi\u2026 (Pi type: ' + typeof Pi + ', init: ' + typeof Pi.init + ')', 'wait');
-            await Pi.init({ version: "2.0" });
-            setStatus('Autenticando con Pi\u2026 Pulsa "Approve" en Pi Browser.', 'wait');
+            if (typeof Pi === 'undefined') {
+                setStatus('\u274c Pi SDK no disponible. Aseg\u00farate de abrir esta p\u00e1gina desde Pi Desktop.', 'err');
+                btnEl.disabled = false;
+                return;
+            }
+            setStatus('Autenticando con Pi\u2026', 'wait');
             var auth = await Pi.authenticate({ scopes: ['username'] });
             setStatus('\u2705 Autenticado como: ' + auth.user.username, 'ok');
         } catch (e) {
-            setStatus('\u274c Error: ' + (e.message || e) + ' | Pi type: ' + typeof Pi, 'err');
+            setStatus('\u274c Error: ' + (e.message || e), 'err');
             btnEl.disabled = false;
         }
     }
