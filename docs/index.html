@@ -59,6 +59,7 @@
     <button id="btn" onclick="doAuth()">Iniciar sesi&oacute;n con Pi</button>
 </div>
 
+<script src="https://sdk.minepi.com/pi-sdk.js"></script>
 <script>
     var statusEl = document.getElementById('status');
     var btnEl    = document.getElementById('btn');
@@ -68,14 +69,21 @@
         statusEl.className = cls;
     }
 
+    function waitForPi(timeoutMs) {
+        return new Promise(function(resolve, reject) {
+            if (typeof Pi !== 'undefined') { resolve(); return; }
+            var t = Date.now();
+            var iv = setInterval(function() {
+                if (typeof Pi !== 'undefined') { clearInterval(iv); resolve(); }
+                else if (Date.now() - t > (timeoutMs || 15000)) { clearInterval(iv); reject(new Error('Pi SDK no se carg\u00f3')); }
+            }, 100);
+        });
+    }
+
     async function doAuth() {
         btnEl.disabled = true;
         try {
-            if (typeof Pi === 'undefined') {
-                setStatus('\u274c Pi SDK no disponible. Aseg\u00farate de abrir esta p\u00e1gina desde Pi Desktop.', 'err');
-                btnEl.disabled = false;
-                return;
-            }
+            await waitForPi(15000);
             setStatus('Autenticando con Pi\u2026', 'wait');
             var auth = await Pi.authenticate({ scopes: ['username'] });
             setStatus('\u2705 Autenticado como: ' + auth.user.username, 'ok');
