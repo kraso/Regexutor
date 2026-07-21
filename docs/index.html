@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>Regexutor — Pi Network</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #0f0f0f 0%, #2a2a2a 50%, #f6f6f6 100%);
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .card {
+            background: rgba(0,0,0,0.6);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 16px;
+            padding: 40px;
+            max-width: 420px;
+            width: 90%;
+            text-align: center;
+        }
+        h1 { font-size: 22px; margin-bottom: 8px; }
+        .subtitle { color: #aaa; font-size: 14px; margin-bottom: 24px; }
+        #status {
+            padding: 16px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            line-height: 1.6;
+            background: rgba(255,255,255,0.05);
+        }
+        #status.ok   { border: 1px solid #4caf50; color: #81c784; }
+        #status.err  { border: 1px solid #f44336; color: #e57373; }
+        #status.wait { border: 1px solid #ff9800; color: #ffb74d; }
+        button {
+            background: #7c4dff;
+            color: #fff;
+            border: none;
+            padding: 12px 28px;
+            border-radius: 8px;
+            font-size: 15px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        button:hover { background: #651fff; }
+        button:disabled { background: #555; cursor: default; }
+    </style>
+</head>
+<body>
+<div class="card">
+    <h1>Regexutor &copy;</h1>
+    <p class="subtitle">Herramienta educativa de expresiones regulares</p>
+    <div id="status" class="wait">Preparando autenticaci&oacute;n con Pi Network&hellip;</div>
+    <button id="btn" onclick="doAuth()">Iniciar sesi&oacute;n con Pi</button>
+</div>
+
+<script src="https://sdk.minepi.com/pi-sdk.js"></script>
+<script>
+    var statusEl = document.getElementById('status');
+    var btnEl    = document.getElementById('btn');
+    var piReady  = false;
+
+    function setStatus(text, cls) {
+        statusEl.textContent = text;
+        statusEl.className = cls;
+    }
+
+    function waitForPi(timeoutMs) {
+        return new Promise(function(resolve, reject) {
+            if (typeof Pi !== 'undefined') { resolve(); return; }
+            var t = Date.now();
+            var iv = setInterval(function() {
+                if (typeof Pi !== 'undefined') { clearInterval(iv); resolve(); }
+                else if (Date.now() - t > (timeoutMs || 15000)) { clearInterval(iv); reject(new Error('Pi SDK no se carg\u00f3')); }
+            }, 100);
+        });
+    }
+
+    async function doAuth() {
+        btnEl.disabled = true;
+        try {
+            await waitForPi(15000);
+            setStatus('Inicializando Pi\u2026', 'wait');
+            await Pi.init({ appId: window.__PI_APP_ID || 'regexutor' });
+            setStatus('Autenticando con Pi\u2026 Pulsa "Approve" en Pi Browser.', 'wait');
+            var auth = await Pi.authenticate({ scopes: ['username'] });
+            setStatus('\u2705 Autenticado como: ' + auth.user.username, 'ok');
+        } catch (e) {
+            setStatus('\u274c Error: ' + (e.message || e), 'err');
+            btnEl.disabled = false;
+        }
+    }
+
+    window.addEventListener('load', function() {
+        doAuth();
+    });
+</script>
+</body>
+</html>
