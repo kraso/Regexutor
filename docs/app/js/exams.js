@@ -104,26 +104,26 @@ window.ExamCatalog = (function () {
     ];
 
     function buildKV(r, kMin, kMax, vMin, vMax) {
-        function K() {
-            var len = Math.floor(r() * (kMax - kMin + 1)) + kMin;
+        function Letters(n) {
             var s = "";
-            for (var i = 0; i < len; i++) s += String.fromCharCode(65 + Math.floor(r() * 26));
+            for (var i = 0; i < n; i++) s += String.fromCharCode(65 + Math.floor(r() * 26));
             return s;
         }
-        function V() {
-            var len = Math.floor(r() * (vMax - vMin + 1)) + vMin;
+        function Digits(n) {
             var s = "";
-            for (var i = 0; i < len; i++) s += String(Math.floor(r() * 10));
+            for (var i = 0; i < n; i++) s += String(Math.floor(r() * 10));
             return s;
         }
+        function K() { return Letters(Math.floor(r() * (kMax - kMin + 1)) + kMin); }
+        function V() { return Digits(Math.floor(r() * (vMax - vMin + 1)) + vMin); }
         var valids = [];
         for (var i = 0; i < 5; i++) valids.push([K() + "=" + V(), true]);
         var invalids = [
-            [K().slice(0, 2) + "=" + V(), false],
-            [K() + K().slice(0, 3) + "=" + V(), false],
+            [Letters(kMin - 1 > 0 ? kMin - 1 : 1) + "=" + V(), false],
+            [Letters(kMax + 1) + "=" + V(), false],
             [K().toLowerCase() + "=" + V(), false],
             [K() + "=", false],
-            [K() + "=" + V() + V() + V(), false],
+            [K() + "=" + Digits(vMax + 1), false],
             [K() + "=" + V() + " ", false],
             [" " + K() + "=" + V(), false],
         ];
@@ -160,22 +160,23 @@ window.ExamCatalog = (function () {
     }
 
     function buildHex(r, lower) {
+        var h = lower ? "0123456789abcdef" : "0123456789ABCDEF";
+        var hOther = lower ? "0123456789ABCDEF" : "0123456789abcdef";
         function hex() {
-            var h = lower ? "0123456789abcdef" : "0123456789ABCDEF";
             var s = "#";
             for (var i = 0; i < 6; i++) s += h[Math.floor(r() * 16)];
             return s;
         }
-        function rnd(len) {
-            var h = lower ? "0123456789abcdef" : "0123456789ABCDEF";
+        function rnd(len, alphabet) {
             var s = "#";
-            for (var i = 0; i < len; i++) s += h[Math.floor(r() * 16)];
+            for (var i = 0; i < len; i++) s += alphabet[Math.floor(r() * alphabet.length)];
             return s;
         }
         var cases = [
             [hex(), true], [hex(), true], [hex(), true],
-            [rnd(4), false], [rnd(5), false], [rnd(7), false],
-            ["#abcdef", false], ["#GGGGGG", false], ["", false]
+            [rnd(4, h), false], [rnd(5, h), false], [rnd(7, h), false],
+            [rnd(6, hOther), false],
+            ["#GGGGGG", false], ["", false]
         ];
         return {
             id: "exam-gen-hex-" + Date.now(),
@@ -261,13 +262,16 @@ window.ExamCatalog = (function () {
         var mo = Math.floor(r() * 12) + 1;
         var d = Math.floor(r() * 28) + 1;
         var pad = function(n) { return n < 10 ? "0" + n : "" + n; };
+        var y2 = yMin + Math.floor(r() * (yMax - yMin + 1));
+        var mo2 = Math.floor(r() * 12) + 1;
+        var d2 = Math.floor(r() * 28) + 1;
         var cases = [
             [y + "-" + pad(mo) + "-" + pad(d), true],
-            ["2026-04-27", true],
-            ["2026-1-05", false], ["2026-01-5", false],
-            ["2026/01/05", false], ["2026-01-05 ", false],
-            ["2026-13-01", false], ["2026-00-10", false],
-            ["2026-04-32", false], ["", false]
+            [y2 + "-" + pad(mo2) + "-" + pad(d2), true],
+            [y + "-1-05", false], [y + "-01-5", false],
+            [y + "/01/05", false], [y + "-01-05 ", false],
+            [y + "-13-01", false], [y + "-00-10", false],
+            [y + "-04-32", false], ["", false]
         ];
         return {
             id: "exam-gen-date-" + Date.now(),
