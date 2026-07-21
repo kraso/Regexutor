@@ -85,13 +85,13 @@
         btnEl.disabled = true;
         try {
             await waitForPi(15000);
-            setStatus('Inicializando Pi\u2026', 'wait');
+            setStatus('Inicializando Pi\u2026 (Pi type: ' + typeof Pi + ', init: ' + typeof Pi.init + ')', 'wait');
             await Pi.init({ version: "2.0" });
             setStatus('Autenticando con Pi\u2026 Pulsa "Approve" en Pi Browser.', 'wait');
             var auth = await Pi.authenticate({ scopes: ['username'] });
             setStatus('\u2705 Autenticado como: ' + auth.user.username, 'ok');
         } catch (e) {
-            setStatus('\u274c Error: ' + (e.message || e), 'err');
+            setStatus('\u274c Error: ' + (e.message || e) + ' | Pi type: ' + typeof Pi, 'err');
             btnEl.disabled = false;
         }
     }
