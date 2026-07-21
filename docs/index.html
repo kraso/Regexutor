@@ -93,6 +93,7 @@
             var auth = await Pi.authenticate(['username']);
             statusEl.className = 'ok';
             statusEl.textContent = 'Sesion iniciada como ' + auth.user.username;
+            localStorage.setItem('regexutor_pi_user', JSON.stringify(auth.user));
             window.piAuth = auth;
         } catch(e) {
             statusEl.className = 'err';

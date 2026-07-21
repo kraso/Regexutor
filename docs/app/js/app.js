@@ -300,25 +300,18 @@
     async function boot() {
         $("eval-btn").onclick = evaluate;
         $("exam-eval-btn").onclick = evaluateExam;
+        $("pi-login-btn").onclick = initPiLogin;
+
+        var saved = PiAuth.tryRestore();
+        if (saved) {
+            setLoggedIn(saved.username);
+        }
+
         renderPractice();
         renderTheory();
         renderExams();
         renderAbout();
         show("practice");
-
-        if (PiAuth.isAvailable()) {
-            $("pi-login-btn").onclick = initPiLogin;
-            try {
-                var user = await PiAuth.login();
-                state.piUser = user;
-                setLoggedIn(user.username);
-            } catch (e) {
-                $("pi-login-btn").onclick = initPiLogin;
-            }
-        } else {
-            $("pi-login-btn").textContent = "Pi no disponible";
-            $("pi-login-btn").disabled = true;
-        }
 
         $("loading-status").style.display = "";
         $("loading-status").textContent = "Cargando motor grep (WASM)…";
