@@ -295,7 +295,7 @@
     }
 
     function renderAbout() {
-        $("about-version").textContent = "1.3.3";
+        $("about-version").textContent = "1.4.0";
     }
 
     function setLoggedIn(username) {

@@ -1,8 +1,7 @@
 window.GrepEngine = (function () {
-    var _cli = null;
+    var _evalCount = 0;
 
     async function init() {
-        _cli = await new Aioli(["grep/3.7"]);
     }
 
     async function evaluateAll(pattern, testCases, dialect) {
@@ -12,9 +11,10 @@ window.GrepEngine = (function () {
             });
         }
 
+        _evalCount++;
         var cli = await new Aioli(["grep/3.7"]);
 
-        var tmpFile = "/tmp/_rgx_batch.txt";
+        var tmpFile = "/tmp/_rgx_" + _evalCount + ".txt";
         var content = testCases.map(function (tc) { return tc[0]; }).join("\n") + "\n";
         await cli.fs.writeFile(tmpFile, content);
 
