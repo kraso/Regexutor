@@ -12,25 +12,6 @@ window.PiAuth = (function () {
     }
 
     function _loadSaved() {
-        // 1. window.name (persists across navigations in same window)
-        try {
-            if (window.name && window.name.length > 0 && window.name.length < 100) {
-                var user = { username: window.name };
-                _saveUser(user);
-                return user;
-            }
-        } catch (e) {}
-        // 2. URL params
-        try {
-            var params = new URLSearchParams(window.location.search);
-            var urlUser = params.get("user");
-            if (urlUser) {
-                var user = { username: urlUser };
-                _saveUser(user);
-                return user;
-            }
-        } catch (e) {}
-        // 3. localStorage
         try {
             var raw = localStorage.getItem(STORAGE_KEY);
             if (raw) { _user = JSON.parse(raw); return _user; }

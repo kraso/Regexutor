@@ -290,7 +290,6 @@
             summaryEl.style.display = "none";
         }
     }
-    }
 
     function generateExam() {
         if (!state.selectedExamTemplate) return;
@@ -343,38 +342,59 @@
     }
 
     function setLoggedIn(username) {
+        $("auth-overlay").style.display = "none";
         $("pi-login-btn").style.display = "none";
         $("pi-user-badge").style.display = "";
         $("pi-username").textContent = username;
     }
 
-    async function initPiLogin() {
+    function showAuthError(msg) {
+        var el = $("auth-status");
+        el.className = "auth-status err";
+        el.textContent = msg;
+        $("auth-btn").disabled = false;
+        $("auth-btn").textContent = "Reintentar";
+    }
+
+    async function doAuth() {
+        var statusEl = $("auth-status");
+        var btn = $("auth-btn");
+
         if (!PiAuth.isAvailable()) {
-            $("pi-login-btn").disabled = true;
-            $("pi-login-btn").textContent = "Pi no disponible";
+            showAuthError("Pi Network no disponible en este navegador.");
             return;
         }
-        $("pi-login-btn").disabled = true;
-        $("pi-login-btn").textContent = "Conectando…";
+
+        btn.disabled = true;
+        btn.textContent = "Conectando\u2026";
+        statusEl.className = "auth-status wait";
+        statusEl.textContent = "Conectando con Pi Network\u2026";
+
         try {
             var user = await PiAuth.login();
             state.piUser = user;
             setLoggedIn(user.username);
         } catch (e) {
-            $("pi-login-btn").disabled = false;
-            $("pi-login-btn").textContent = "Iniciar sesión con Pi";
+            var msg = e.message || String(e);
+            if (msg === "timeout") {
+                showAuthError("Tiempo de espera agotado. Verifica que Pi Network est\u00e9 disponible.");
+            } else {
+                showAuthError("Error: " + msg);
+            }
         }
     }
 
     async function boot() {
+        $("auth-btn").onclick = doAuth;
         $("eval-btn").onclick = evaluate;
         $("exam-eval-btn").onclick = evaluateExam;
-        $("pi-login-btn").onclick = initPiLogin;
         $("hint-btn").onclick = showHint;
 
         var saved = PiAuth.tryRestore();
         if (saved) {
             setLoggedIn(saved.username);
+        } else {
+            $("auth-overlay").style.display = "";
         }
 
         renderPractice();
@@ -384,7 +404,7 @@
         show("practice");
 
         $("loading-status").style.display = "";
-        $("loading-status").textContent = "Cargando motor grep (WASM)…";
+        $("loading-status").textContent = "Cargando motor grep (WASM)\u2026";
         try {
             await GrepEngine.init();
             $("loading-status").style.display = "none";
