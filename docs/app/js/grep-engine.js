@@ -16,7 +16,7 @@ window.GrepEngine = (function () {
         if (!pattern) {
             return { match: false, count: 0 };
         }
-        _cli.stdin = input;
+        _cli.stdin = input + "\n";
         try {
             var result = await _cli.exec("grep", _args(pattern, dialect));
             var count = parseInt(result.trim()) || 0;
