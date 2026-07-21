@@ -19,7 +19,7 @@
         state.view = view;
         document.querySelectorAll(".view").forEach(function (v) { v.style.display = "none"; });
         var el = $(view);
-        if (el) el.style.display = "";
+        if (el) el.style.display = "block";
         renderNav();
     }
 
@@ -274,6 +274,11 @@
     }
 
     async function initPiLogin() {
+        if (!PiAuth.isAvailable()) {
+            $("pi-login-btn").disabled = true;
+            $("pi-login-btn").textContent = "Pi no disponible";
+            return;
+        }
         try {
             var user = await PiAuth.login();
             state.piUser = user;
