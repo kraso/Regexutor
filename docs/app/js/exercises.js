@@ -91,7 +91,7 @@ window.EXERCISES = [
     ],
     tests: [
       ["cat", true], ["dog", true], ["hotdog", true], ["caterpillar", true],
-      ["do g", false], ["bird", false], ["CAT", false], ["scatter", false],
+      ["do g", false], ["bird", false], ["CAT", false], ["scatter", true],
       ["the dog ran", true], ["", false], ["catalog", true], ["dogma", true],
       ["catdog", true]
     ]
