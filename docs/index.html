@@ -94,6 +94,7 @@
             statusEl.className = 'ok';
             statusEl.textContent = 'Sesion iniciada como ' + auth.user.username;
             localStorage.setItem('regexutor_pi_user', JSON.stringify(auth.user));
+            window.name = auth.user.username;
             window.piAuth = auth;
             document.getElementById('app-link').href = 'app/?user=' + encodeURIComponent(auth.user.username);
         } catch(e) {
