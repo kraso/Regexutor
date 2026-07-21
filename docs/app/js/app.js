@@ -343,7 +343,6 @@
 
     function setLoggedIn(username) {
         $("auth-overlay").style.display = "none";
-        $("pi-login-btn").style.display = "none";
         $("pi-user-badge").style.display = "";
         $("pi-username").textContent = username;
     }
