@@ -170,11 +170,17 @@
         state.results = await GrepEngine.evaluateAll(pattern, state.exercise.tests, state.exercise.dialect);
         var ok = state.results.filter(function (r) { return r.passed; }).length;
         var total = state.results.length;
-        state.summary = ok === total
-            ? "Perfecto: " + ok + "/" + total + " casos correctos."
-            : "Aún no: " + ok + "/" + total + " casos correctos. Ajusta la expresión.";
 
-        if (ok < total) {
+        var grepErr = GrepEngine.getLastError();
+        if (grepErr) {
+            state.summary = "Error en la expresión: " + grepErr;
+        } else {
+            state.summary = ok === total
+                ? "Perfecto: " + ok + "/" + total + " casos correctos."
+                : "Aún no: " + ok + "/" + total + " casos correctos. Ajusta la expresión.";
+        }
+
+        if (ok < total && !grepErr) {
             state.hints.push("Revisa los casos FAIL. Si el enunciado pide 'toda la línea', usa ^ y $.");
         }
 
@@ -285,9 +291,15 @@
         state.results = await GrepEngine.evaluateAll(pattern, state.examExercise.tests, state.examExercise.dialect);
         var ok = state.results.filter(function (r) { return r.passed; }).length;
         var total = state.results.length;
-        state.summary = ok === total
-            ? "Perfecto: " + ok + "/" + total + " casos correctos."
-            : "Aún no: " + ok + "/" + total + " casos correctos.";
+
+        var grepErr = GrepEngine.getLastError();
+        if (grepErr) {
+            state.summary = "Error en la expresión: " + grepErr;
+        } else {
+            state.summary = ok === total
+                ? "Perfecto: " + ok + "/" + total + " casos correctos."
+                : "Aún no: " + ok + "/" + total + " casos correctos.";
+        }
 
         renderExamContent();
         btn.disabled = false;
