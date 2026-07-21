@@ -373,6 +373,7 @@
             var user = await PiAuth.login();
             state.piUser = user;
             setLoggedIn(user.username);
+            showApp();
         } catch (e) {
             var msg = e.message || String(e);
             if (msg === "timeout") {
@@ -381,6 +382,14 @@
                 showAuthError("Error: " + msg);
             }
         }
+    }
+
+    function showApp() {
+        renderPractice();
+        renderTheory();
+        renderExams();
+        renderAbout();
+        show("practice");
     }
 
     async function boot() {
@@ -392,15 +401,10 @@
         var saved = PiAuth.tryRestore();
         if (saved) {
             setLoggedIn(saved.username);
+            showApp();
         } else {
             $("auth-overlay").style.display = "";
         }
-
-        renderPractice();
-        renderTheory();
-        renderExams();
-        renderAbout();
-        show("practice");
 
         $("loading-status").style.display = "";
         $("loading-status").textContent = "Cargando motor grep (WASM)\u2026";
