@@ -174,7 +174,18 @@
             ? "Perfecto: " + ok + "/" + total + " casos correctos."
             : "Aún no: " + ok + "/" + total + " casos correctos. Ajusta la expresión.";
 
-        if (ok < total) {
+        var errs = GrepEngine.getErrors();
+        if (errs.length > 0) {
+            state.hints.push("⚠ Errores: " +
+                errs.map(function (e) { return '"' + e.input + '" → ' + e.error; }).join("; "));
+        }
+
+        var dbg = GrepEngine.getDebug();
+        if (dbg) {
+            state.hints.push("🔍 Debug: " + dbg.replace(/\n/g, " | "));
+        }
+
+        if (ok < total && errs.length === 0 && !dbg) {
             state.hints.push("Revisa los casos FAIL. Si el enunciado pide 'toda la línea', usa ^ y $.");
         }
 
@@ -295,7 +306,7 @@
     }
 
     function renderAbout() {
-        $("about-version").textContent = "1.2.0";
+        $("about-version").textContent = "1.3.1";
     }
 
     function setLoggedIn(username) {
