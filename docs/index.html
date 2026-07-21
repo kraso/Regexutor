@@ -20,7 +20,7 @@
             border: 1px solid rgba(255,255,255,0.15);
             border-radius: 16px;
             padding: 40px;
-            max-width: 480px;
+            max-width: 500px;
             width: 90%;
             text-align: center;
         }
@@ -31,11 +31,13 @@
             border-radius: 10px;
             margin-bottom: 20px;
             font-size: 12px;
-            line-height: 1.6;
+            line-height: 1.8;
             background: rgba(255,255,255,0.05);
             text-align: left;
             white-space: pre-wrap;
             word-break: break-all;
+            max-height: 400px;
+            overflow-y: auto;
         }
         #status.ok   { border: 1px solid #4caf50; color: #81c784; }
         #status.err  { border: 1px solid #f44336; color: #e57373; }
@@ -63,51 +65,74 @@
 </div>
 
 <script>
-    var log = [];
-    function dbg(msg) { log.push(msg); document.getElementById('status').textContent = log.join('\n'); }
-    dbg('Pre-Pi: typeof=' + typeof Pi);
+    var _lines = [];
+    function dbg(msg) {
+        _lines.push(msg);
+        document.getElementById('status').textContent = _lines.join('\n');
+        document.getElementById('status').scrollTop = 9999;
+    }
+
+    dbg('1. Page loaded. typeof Pi = ' + typeof Pi);
+    dbg('2. window.chrome exists = ' + (!!window.chrome));
+    dbg('3. window.chrome.webview exists = ' + (!!(window.chrome && window.chrome.webview)));
 </script>
-<script>window._prePi = typeof Pi;</script>
-<script src="https://sdk.minepi.com/pi-sdk.js?v=3"></script>
+<script src="https://sdk.minepi.com/pi-sdk.js?v=dbg1"></script>
 <script>
-    dbg('Post-SDK: typeof=' + typeof Pi + ' (was ' + window._prePi + ')');
+    dbg('4. After SDK script. typeof Pi = ' + typeof Pi);
     if (typeof Pi !== 'undefined') {
-        dbg('Pi.init type=' + typeof Pi.init);
-        dbg('Pi.authenticate type=' + typeof Pi.authenticate);
+        dbg('   Pi.init = ' + typeof Pi.init);
+        dbg('   Pi.authenticate = ' + typeof Pi.authenticate);
+        dbg('   Pi keys = ' + Object.keys(Pi).join(', '));
     }
 </script>
 <script>
     async function doAuth() {
         document.getElementById('btn').disabled = true;
-        dbg('\n--- doAuth ---');
-        dbg('Pi type=' + typeof Pi);
+
+        dbg('\n--- doAuth start ---');
+        dbg('typeof Pi = ' + typeof Pi);
 
         if (typeof Pi === 'undefined') {
-            dbg('FATAL: Pi is undefined');
+            dbg('FATAL: Pi not defined');
             document.getElementById('btn').disabled = false;
             return;
         }
 
-        // Try init with version "2.0"
-        try {
-            dbg('Calling Pi.init({version:"2.0"})...');
-            await Pi.init({ version: "2.0" });
-            dbg('Pi.init OK!');
-        } catch(e) {
-            dbg('Pi.init error: ' + e.message);
+        // Capture Pi state BEFORE init
+        var initStr = Pi.init.toString().substring(0, 200);
+        dbg('Pi.init source: ' + initStr);
+
+        // Try each init signature and collect results
+        var tries = [
+            ['Pi.init()',                          function(){ return Pi.init(); }],
+            ['Pi.init("2.0")',                     function(){ return Pi.init("2.0"); }],
+            ['Pi.init({version:"2.0"})',           function(){ return Pi.init({version:"2.0"}); }],
+            ['Pi.init({version:"3.0"})',           function(){ return Pi.init({version:"3.0"}); }],
+            ['Pi.init({})',                        function(){ return Pi.init({}); }],
+            ['Pi.init(null)',                      function(){ return Pi.init(null); }],
+        ];
+
+        for (var i = 0; i < tries.length; i++) {
+            try {
+                await tries[i][1]();
+                dbg(tries[i][0] + ' => OK!');
+            } catch(e) {
+                dbg(tries[i][0] + ' => FAIL: ' + e.message);
+            }
         }
 
-        // Try authenticate
+        // Now try authenticate
+        dbg('\n--- authenticate ---');
         try {
-            dbg('Calling Pi.authenticate()...');
             var auth = await Pi.authenticate({ scopes: ['username'] });
-            setStatus('\u2705 OK: ' + auth.user.username, 'ok');
+            document.getElementById('status').className = 'ok';
+            dbg('SUCCESS: ' + auth.user.username);
         } catch(e) {
-            dbg('Pi.authenticate error: ' + e.message);
-            document.getElementById('btn').disabled = false;
+            dbg('authenticate FAIL: ' + e.message);
         }
+
+        document.getElementById('btn').disabled = false;
     }
-    window.addEventListener('load', function() { doAuth(); });
 </script>
 </body>
 </html>
